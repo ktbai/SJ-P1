@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SJ-P1 智能故障診斷 / Fault Diagnosis / 故障診断</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Sans+JP:wght@300;400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0d0f14;--surf:#161921;--surf2:#1e2230;--surf3:#252a3a;--bdr:rgba(255,255,255,0.07);--bdr2:rgba(255,255,255,0.13);--txt:#dde2ee;--muted:#7a849a;--accent:#5b9cf6;--accent-dim:rgba(91,156,246,0.1);--danger:#f47a7a;--danger-dim:rgba(244,122,122,0.1);--warn:#f5a742;--warn-dim:rgba(245,167,66,0.1);--ok:#52c77a;--ok-dim:rgba(82,199,122,0.1);--mono:'IBM Plex Mono',monospace;--sans:'Noto Sans TC','Noto Sans JP',sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:var(--sans);min-height:100vh;display:flex;flex-direction:column;font-size:14px}
+.hdr{background:var(--surf);border-bottom:1px solid var(--bdr);padding:0 16px;height:52px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:50}
+.hdr-logo{width:30px;height:30px;background:linear-gradient(135deg,#3b82f6,#6366f1);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.hdr-info{flex:1}.hdr-title{font-size:14px;font-weight:500}.hdr-sub{font-size:11px;color:var(--muted)}
+.hdr-badge{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ok);background:var(--ok-dim);border:1px solid rgba(82,199,122,0.2);padding:3px 10px;border-radius:20px}
+.hdr-dot{width:6px;height:6px;border-radius:50%;background:var(--ok);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.lang-bar{background:var(--surf2);border-bottom:1px solid var(--bdr);padding:7px 16px;display:flex;align-items:center;gap:8px}
+.lang-label{font-size:11px;color:var(--muted)}
+.lang-btn{font-size:13px;padding:5px 14px;border-radius:20px;border:1px solid var(--bdr2);background:transparent;cursor:pointer;color:var(--muted);font-family:var(--sans);transition:all .15s}
+.lang-btn.on{background:var(--accent-dim);border-color:rgba(91,156,246,.4);color:var(--accent);font-weight:500}
+.layout{display:flex;flex:1;min-height:0;overflow:hidden}
+.sb{width:250px;flex-shrink:0;background:var(--surf);border-right:1px solid var(--bdr);display:flex;flex-direction:column;overflow:hidden}
+.sb-head{padding:12px 12px 8px;border-bottom:1px solid var(--bdr)}
+.sb-search{width:100%;background:var(--bg);border:1px solid var(--bdr);border-radius:8px;color:var(--txt);font-family:var(--sans);font-size:13px;padding:7px 10px;outline:none;transition:border-color .15s}
+.sb-search:focus{border-color:var(--accent)}
+.sb-search::placeholder{color:var(--muted)}
+.sb-list{overflow-y:auto;flex:1;padding:6px}
+.sb-item{padding:7px 10px;border-radius:7px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .12s;border:1px solid transparent;margin-bottom:2px}
+.sb-item:hover{background:var(--surf2);border-color:var(--bdr)}
+.sb-item.active{background:var(--accent-dim);border-color:rgba(91,156,246,0.3)}
+.sb-code{font-family:var(--mono);font-size:12px;color:var(--accent);min-width:38px;font-weight:500}
+.sb-name{font-size:12px;color:var(--muted);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sev{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.sev-h{background:var(--danger)}.sev-m{background:var(--warn)}.sev-l{background:var(--ok)}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.chat{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px}
+.msg{display:flex;gap:10px;max-width:820px;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.msg.user{flex-direction:row-reverse;margin-left:auto}
+.av{width:30px;height:30px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px}
+.msg.ai .av{background:linear-gradient(135deg,#3b82f6,#6366f1)}
+.msg.user .av{background:var(--surf3);border:1px solid var(--bdr2)}
+.bubble{background:var(--surf);border:1px solid var(--bdr);border-radius:12px;padding:12px 15px;font-size:13px;line-height:1.75;flex:1;min-width:0}
+.msg.user .bubble{background:var(--accent-dim);border-color:rgba(91,156,246,0.25)}
+.welcome{background:var(--surf);border:1px solid var(--bdr);border-radius:14px;padding:22px;max-width:600px}
+.wt{font-size:16px;font-weight:500;margin-bottom:8px}
+.wd{font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:14px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-size:12px;padding:4px 10px;border:1px solid var(--bdr2);border-radius:16px;cursor:pointer;transition:all .15s;color:var(--muted);background:transparent;font-family:var(--sans)}
+.chip:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+.ecard{border-radius:10px;padding:14px;border:1px solid;margin-top:6px}
+.ecard.h{border-color:rgba(244,122,122,.25);background:var(--danger-dim)}
+.ecard.m{border-color:rgba(245,167,66,.25);background:var(--warn-dim)}
+.ecard.l{border-color:rgba(82,199,122,.25);background:var(--ok-dim)}
+.ehead{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.ebadge{font-family:var(--mono);font-size:13px;font-weight:500;padding:2px 8px;border-radius:5px;background:rgba(255,255,255,0.07)}
+.ename{font-size:14px;font-weight:500}
+.stag{margin-left:auto;font-size:11px;padding:2px 8px;border-radius:4px;font-weight:500}
+.stag-h{background:rgba(244,122,122,.18);color:var(--danger)}
+.stag-m{background:rgba(245,167,66,.18);color:var(--warn)}
+.stag-l{background:rgba(82,199,122,.18);color:var(--ok)}
+.sec{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:10px 0 5px}
+.causes{list-style:none;display:flex;flex-direction:column;gap:3px}
+.ci{font-size:13px;padding:5px 9px;background:rgba(255,255,255,0.04);border-radius:6px;display:flex;gap:7px}
+.sols{list-style:none;display:flex;flex-direction:column;gap:5px}
+.si{font-size:13px;padding:7px 11px;background:rgba(255,255,255,0.04);border-radius:7px;border-left:2px solid;line-height:1.6}
+.h .si{border-left-color:var(--danger)}.m .si{border-left-color:var(--warn)}.l .si{border-left-color:var(--ok)}
+.pm{display:inline-block;font-family:var(--mono);font-size:11px;background:rgba(91,156,246,.15);color:var(--accent);padding:1px 5px;border-radius:4px;margin:0 1px}
+.note{margin-top:10px;font-size:12px;padding:7px 11px;border-radius:7px;line-height:1.6}
+.note-warn{background:rgba(244,122,122,.08);border-left:2px solid var(--danger)}
+.note-info{background:rgba(91,156,246,.08);border-left:2px solid var(--accent)}
+.typing-wrap{display:flex;gap:10px;max-width:820px}
+.typing{display:flex;gap:4px;align-items:center;padding:14px 15px}
+.typing span{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:bounce 1.1s infinite}
+.typing span:nth-child(2){animation-delay:.18s}.typing span:nth-child(3){animation-delay:.36s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-7px)}}
+.input-wrap{border-top:1px solid var(--bdr);padding:12px 16px;background:var(--surf)}
+.quick-chips{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px}
+.irow{display:flex;gap:8px;align-items:flex-end}
+.ta-wrap{flex:1}
+textarea.inp{width:100%;background:var(--bg);border:1px solid var(--bdr);border-radius:10px;color:var(--txt);font-family:var(--sans);font-size:13px;padding:10px 14px;outline:none;resize:none;min-height:42px;max-height:110px;transition:border-color .15s;line-height:1.5}
+textarea.inp:focus{border-color:var(--accent)}
+textarea.inp::placeholder{color:var(--muted)}
+.send{width:40px;height:40px;border-radius:9px;background:var(--accent);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.send:hover{background:#7ab4ff}.send:disabled{opacity:.4;cursor:not-allowed}
+.send svg{width:16px;height:16px;fill:#0d0f14}
+.mode-row{display:flex;gap:6px;margin-bottom:8px;align-items:center}
+.mode-label{font-size:11px;color:var(--muted)}
+.mode-btn{font-size:11px;padding:3px 9px;border-radius:5px;border:1px solid var(--bdr2);background:transparent;cursor:pointer;color:var(--muted);font-family:var(--sans);transition:all .12s}
+.mode-btn.on{background:var(--accent-dim);border-color:rgba(91,156,246,.35);color:var(--accent)}
+@media(max-width:700px){.sb{display:none}}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <div class="hdr-logo">⚡</div>
+  <div class="hdr-info">
+    <div class="hdr-title" id="hdrTitle">SJ-P1 智能故障診斷助理</div>
+    <div class="hdr-sub" id="hdrSub">日立逆變器 · 全錯誤代碼 · 內建智能分析</div>
+  </div>
+  <div class="hdr-badge"><span class="hdr-dot"></span><span id="hdrBadge">智能診斷就緒</span></div>
+</div>
+<div class="lang-bar">
+  <span class="lang-label" id="langLabel">語言：</span>
+  <button class="lang-btn on" id="btnZH" onclick="setLang('zh')">🇹🇼 繁體中文</button>
+  <button class="lang-btn" id="btnEN" onclick="setLang('en')">🇺🇸 English</button>
+  <button class="lang-btn" id="btnJA" onclick="setLang('ja')">🇯🇵 日本語</button>
+</div>
+<div class="layout">
+<div class="sb">
+  <div class="sb-head"><input class="sb-search" id="sbSearch" type="text" placeholder="搜尋…" oninput="filterSidebar(this.value)"></div>
+  <div class="sb-list" id="sbList"></div>
+</div>
+<div class="main">
+  <div class="chat" id="chat">
+    <div class="welcome">
+      <div class="wt" id="welcomeTitle">👋 SJ-P1 智能故障診斷助理</div>
+      <div class="wd" id="welcomeDesc">輸入面板上顯示的<strong>錯誤代碼</strong>（如 E001），或用<strong>自然語言描述問題</strong>。智能引擎將根據完整說明書為您分析並給出排查建議。</div>
+      <div class="chips" id="quickChips"></div>
+    </div>
+  </div>
+  <div class="input-wrap">
+    <div class="mode-row">
+      <span class="mode-label" id="modeLabel">回答模式：</span>
+      <button class="mode-btn on" id="modeAI" onclick="setMode('ai')">🧠 智能分析</button>
+      <button class="mode-btn" id="modeDB" onclick="setMode('db')">📋 快速查詢</button>
+    </div>
+    <div class="quick-chips">
+      <button class="chip" onclick="ask('E001')">E001</button>
+      <button class="chip" onclick="ask('E005')">E005</button>
+      <button class="chip" onclick="ask('E007')">E007</button>
+      <button class="chip" onclick="ask('E009')">E009</button>
+      <button class="chip" onclick="ask('E012')">E012</button>
+      <button class="chip" onclick="ask('E014')">E014</button>
+      <button class="chip" onclick="ask('E020')">E020</button>
+      <button class="chip" onclick="ask('E039')">E039</button>
+    </div>
+    <div class="irow">
+      <div class="ta-wrap"><textarea class="inp" id="inp" rows="1" onkeydown="onKey(event)" oninput="resize(this)"></textarea></div>
+      <button class="send" id="sendBtn" onclick="send()"><svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg></button>
+    </div>
+  </div>
+</div>
+</div>
+<script>
+const I18N={zh:{hdrTitle:'SJ-P1 智能故障診斷助理',hdrSub:'日立逆變器 · 全錯誤代碼 · 內建智能分析',hdrBadge:'智能診斷就緒',langLabel:'語言：',searchPH:'搜尋錯誤代碼或名稱…',welcomeTitle:'👋 SJ-P1 智能故障診斷助理',welcomeDesc:'輸入面板上顯示的<strong>錯誤代碼</strong>（如 E001），或用<strong>自然語言描述問題</strong>（如「馬達減速時跳脫」）。智能引擎將分析並給出排查建議。',modeLabel:'回答模式：',modeAI:'🧠 智能分析',modeDB:'📋 快速查詢',inputPH:'輸入錯誤代碼或描述症狀…',chips:[['E001 過電流','E001 過電流'],['E007 過電壓','E007 過電壓'],['E005 馬達過載','E005 過載'],['如何重置錯誤警報','如何重置警報'],['保養週期建議','保養週期']],sevH:'嚴重',sevM:'警告',sevL:'一般',causeTitle:'推測原因',solTitle:'排查步驟',resetTitle:'錯誤警報重置方法',maintenanceTitle:'SJ-P1 建議保養週期',smartResult:'智能分析結果',relatedCodes:'相關代碼：',noMatch:'找不到對應代碼。請輸入代碼（如 E001）或切換到 🧠 智能分析模式描述症狀。',notFound:'您描述的是「{q}」。<br><br>請提供更多資訊：<br><ul class="causes" style="margin-top:8px"><li class="ci"><span>❓</span>面板是否有 <strong>E 開頭的錯誤代碼</strong>？</li><li class="ci"><span>❓</span>問題發生在<strong>啟動時、運轉中、還是減速時</strong>？</li><li class="ci"><span>❓</span>是否有<strong>異常聲音、異味或過熱</strong>？</li></ul>'},en:{hdrTitle:'SJ-P1 Smart Fault Diagnosis',hdrSub:'Hitachi Inverter · All Error Codes · Built-in Intelligence',hdrBadge:'System Ready',langLabel:'Language: ',searchPH:'Search error code or name…',welcomeTitle:'👋 SJ-P1 Smart Fault Diagnosis',welcomeDesc:'Enter the <strong>error code</strong> shown on the panel (e.g. E001), or <strong>describe the symptom</strong> in plain language. The built-in engine will analyze and provide troubleshooting guidance.',modeLabel:'Mode: ',modeAI:'🧠 Smart Analysis',modeDB:'📋 Quick Lookup',inputPH:'Enter error code or describe symptom…',chips:[['E001 Overcurrent','E001 Overcurrent'],['E007 Overvoltage','E007 Overvoltage'],['E005 Motor Overload','E005 Overload'],['How to reset alarm','How to reset'],['Maintenance schedule','Maintenance']],sevH:'Critical',sevM:'Warning',sevL:'Info',causeTitle:'Possible Causes',solTitle:'Troubleshooting Steps',resetTitle:'How to Reset Alarm',maintenanceTitle:'SJ-P1 Maintenance Schedule',smartResult:'Smart Analysis Result',relatedCodes:'Related codes: ',noMatch:'Error code not found. Enter a code directly (e.g. E001) or switch to 🧠 Smart Analysis mode.',notFound:'You described: "{q}".<br><br>Please provide more details:<br><ul class="causes" style="margin-top:8px"><li class="ci"><span>❓</span>Is there an <strong>E-code on the panel</strong>?</li><li class="ci"><span>❓</span>Does it occur on <strong>start, during run, or during deceleration</strong>?</li><li class="ci"><span>❓</span>Any <strong>abnormal noise, odor, or overheating</strong>?</li></ul>'},ja:{hdrTitle:'SJ-P1 スマート故障診断',hdrSub:'日立インバータ · 全エラーコード · 内蔵インテリジェント分析',hdrBadge:'システム準備完了',langLabel:'言語：',searchPH:'エラーコードまたは名称を検索…',welcomeTitle:'👋 SJ-P1 スマート故障診断',welcomeDesc:'パネルに表示された<strong>エラーコード</strong>（例：E001）を入力するか、<strong>症状を説明</strong>（例：「減速中にトリップする」）してください。内蔵エンジンが分析・対策を提示します。',modeLabel:'モード：',modeAI:'🧠 スマート分析',modeDB:'📋 クイック検索',inputPH:'エラーコードまたは症状を入力…',chips:[['E001 過電流','E001 過電流'],['E007 過電圧','E007 過電圧'],['E005 モーター過負荷','E005 過負荷'],['アラームのリセット方法','リセット方法'],['保守・点検周期','保守周期']],sevH:'重大',sevM:'警告',sevL:'情報',causeTitle:'推定原因',solTitle:'対処手順',resetTitle:'アラームリセット方法',maintenanceTitle:'SJ-P1 保守・点検周期',smartResult:'スマート分析結果',relatedCodes:'関連コード：',noMatch:'エラーコードが見つかりません。コードを入力（例：E001）するか、🧠 スマート分析モードで症状を説明してください。',notFound:'「{q}」について確認します。<br><br>詳細を教えてください：<br><ul class="causes" style="margin-top:8px"><li class="ci"><span>❓</span>パネルに<strong>Eで始まるエラーコード</strong>は表示されていますか？</li><li class="ci"><span>❓</span>問題は<strong>起動時・運転中・減速時</strong>のいずれに発生しますか？</li><li class="ci"><span>❓</span><strong>異音・異臭・過熱</strong>はありますか？</li></ul>'}};
+
+const DB={
+E001:{s:'h',zh:{n:'過電流錯誤',sl:'嚴重',d:'逆變器輸出電流超過額定值，保護電路切斷輸出。最常見錯誤之一。',causes:['加速時間過短，啟動電流過大','馬達或負載發生機械卡死、堵轉','逆變器容量不足，超過額定電流','減速時負載慣性過大，產生再生電流','輸出側短路或接地故障'],sols:['延長加速時間 <span class="pm">[FA-01]</span>，建議先嘗試增加 50%','確認馬達與負載是否有機械卡死','確認逆變器規格與馬達額定電流是否匹配','延長減速時間 <span class="pm">[FA-12]</span>，或加裝制動電阻器','使用過電流抑制功能 <span class="pm">[bA120]</span>'],rst:true,note:'info',noteText:'重置：確認運轉指令 OFF 後，按面板 STOP/RESET 鍵。'},en:{n:'Overcurrent Error',sl:'Critical',d:'Output current exceeded rated value; protective circuit tripped. One of the most common errors.',causes:['Acceleration time too short, high inrush current','Motor or load mechanically locked (stall)','Inverter capacity insufficient','High load inertia during deceleration causing regenerative current','Output short-circuit or ground fault'],sols:['Extend acceleration time <span class="pm">[FA-01]</span> — try increasing by 50%','Check for mechanical seizure; rotate manually','Verify inverter rating matches motor rated current','Extend deceleration time <span class="pm">[FA-12]</span> or add braking resistor','Use overcurrent suppression <span class="pm">[bA120]</span>'],rst:true,note:'info',noteText:'Reset: Turn off run command, then press STOP/RESET on panel.'},ja:{n:'過電流エラー',sl:'重大',d:'インバータ出力電流が定格値を超えたため、保護回路が出力を遮断しました。最も一般的なエラーの一つです。',causes:['加速時間が短すぎる、起動電流が大きい','モータまたは負荷の機械的ロック','インバータ容量不足','減速時の負荷慣性が大きく回生電流が発生','出力側の短絡または地絡'],sols:['加速時間 <span class="pm">[FA-01]</span> を延長（まず50%増加を試みる）','モータと負荷の機械的拘束を確認','インバータ定格とモータ定格電流の一致を確認','減速時間 <span class="pm">[FA-12]</span> を延長、または制動抵抗器を追加','過電流抑制機能 <span class="pm">[bA120]</span> を使用'],rst:true,note:'info',noteText:'リセット：運転指令をOFFにしてから、パネルのSTOP/RESETキーを押してください。'}},
+E005:{s:'h',zh:{n:'馬達過載錯誤',sl:'嚴重',d:'電子熱保護功能偵測到馬達持續過載，為保護馬達而切斷輸出。',causes:['長時間超過額定負載的重載狀態','電子熱保護設定值與馬達實際額定不符','低速長時間運轉，馬達散熱不足','機械系統阻力增加'],sols:['重新評估負載條件，確認馬達額定容量','確認 <span class="pm">[bC110]</span> 設定與馬達銘板額定電流相符','低速長期運轉應選用含強制冷卻風扇的馬達','檢查傳動機構，確認無異常阻力'],rst:true,note:'warn',noteText:'注意：若 [bC112]=00，錯誤後 10 秒內不接受重置。'},en:{n:'Motor Overload Error',sl:'Critical',d:'Electronic thermal protection detected sustained motor overload; output tripped to protect motor.',causes:['Continuous operation above rated load','Thermal protection setting mismatched with motor rating','Extended low-speed operation causing insufficient cooling','Increased mechanical resistance'],sols:['Re-evaluate load; verify motor rated capacity','Set <span class="pm">[bC110]</span> to match motor nameplate rated current','For extended low-speed use, select motor with forced cooling fan','Inspect drivetrain for abnormal resistance'],rst:true,note:'warn',noteText:'Note: If [bC112]=00, reset is not accepted for 10 seconds after error.'},ja:{n:'モーター過負荷エラー',sl:'重大',d:'電子サーマル保護機能がモーターの持続的な過負荷を検出し、保護のため出力を遮断しました。',causes:['定格負荷を超えた重負荷状態が継続','電子サーマル保護設定値とモーター定格が不一致','低速長時間運転によるモーター冷却不足','機械系統の抵抗増加'],sols:['負荷条件を再検討し、モーター定格容量を確認','<span class="pm">[bC110]</span> をモーター銘板定格電流に合わせて設定','低速長時間運転には強制冷却ファン付きモーターを選択','駆動系統の異常抵抗がないか点検'],rst:true,note:'warn',noteText:'注意：[bC112]=00の場合、エラー後10秒間はリセット不可。'}},
+E006:{s:'m',zh:{n:'制動電阻器過負載錯誤',sl:'警告',d:'制動電阻器使用率超過設定上限，為保護制動電阻器切斷輸出。',causes:['減速時間過短，制動頻率過高','負載慣性過大','制動電阻器容量選型過小'],sols:['延長減速時間 <span class="pm">[FA-12]</span>','確認制動電阻器選型符合實際負載','考慮使用回生轉換器','調整 <span class="pm">[bA-60]</span> 制動電阻使用率上限'],rst:true,note:'info',noteText:'重置前請確認電阻器已冷卻。'},en:{n:'Braking Resistor Overload Error',sl:'Warning',d:'Braking resistor duty cycle exceeded the set limit; output tripped to protect the braking resistor.',causes:['Deceleration time too short; high braking frequency','High load inertia','Braking resistor capacity undersized'],sols:['Extend deceleration time <span class="pm">[FA-12]</span>','Verify braking resistor rating matches actual load','Consider using regenerative converter','Adjust braking resistor duty limit <span class="pm">[bA-60]</span>'],rst:true,note:'info',noteText:'Confirm resistor has cooled before resetting.'},ja:{n:'制動抵抗器過負荷エラー',sl:'警告',d:'制動抵抗器の使用率が設定上限を超えたため、保護のため出力を遮断しました。',causes:['減速時間が短すぎる、制動頻度が高い','負荷慣性が大きい','制動抵抗器容量が不足'],sols:['減速時間 <span class="pm">[FA-12]</span> を延長','制動抵抗器の定格が実際の負荷に合っているか確認','回生コンバータの使用を検討','制動抵抗器使用率上限 <span class="pm">[bA-60]</span> を調整'],rst:true,note:'info',noteText:'リセット前に抵抗器が冷却されていることを確認してください。'}},
+E007:{s:'m',zh:{n:'過電壓錯誤',sl:'警告',d:'P-N 端直流電壓過高（200V 級超過約 410VDC，400V 級超過約 820VDC），系統切斷輸出。',causes:['減速時間過短，馬達回生電力無法快速消耗','負載慣性過大','外力驅動馬達旋轉','電源電壓本身過高'],sols:['延長減速時間 <span class="pm">[FA-12]</span>','啟用過電壓抑制功能 <span class="pm">[bA140]</span>','加裝制動電阻器 + 制動單元（BRD）','加裝 AC 電抗器改善電源電壓波動'],rst:true,note:'info',noteText:'若電源電壓本身偏高，應優先改善電源環境。'},en:{n:'Overvoltage Error',sl:'Warning',d:'P-N DC bus voltage exceeded limit (200V class: ~410VDC; 400V class: ~820VDC); output tripped.',causes:['Deceleration time too short; regenerative energy cannot dissipate','High load inertia','External force driving motor','Supply voltage itself too high'],sols:['Extend deceleration time <span class="pm">[FA-12]</span>','Enable overvoltage suppression <span class="pm">[bA140]</span>','Add braking resistor + braking unit (BRD)','Add AC reactor to improve supply voltage stability'],rst:true,note:'info',noteText:'If supply voltage is fundamentally high, improve power supply environment first.'},ja:{n:'過電圧エラー',sl:'警告',d:'P-N間直流電圧が高すぎます（200Vクラス：約410VDC超、400Vクラス：約820VDC超）。出力を遮断しました。',causes:['減速時間が短すぎ、回生電力を消費しきれない','負荷慣性が大きい','外力によるモーター回転','電源電圧自体が高い'],sols:['減速時間 <span class="pm">[FA-12]</span> を延長','過電圧抑制機能 <span class="pm">[bA140]</span> を有効化','制動抵抗器＋制動ユニット（BRD）を追加','AC リアクトルを追加して電源電圧変動を改善'],rst:true,note:'info',noteText:'電源電圧が根本的に高い場合は、電源環境の改善を優先してください。'}},
+E008:{s:'h',zh:{n:'記憶體錯誤',sl:'嚴重',d:'逆變器內建記憶體（EEPROM）發生異常，可能導致參數設定遺失。',causes:['電源瞬間中斷發生於參數寫入過程中','強烈電磁干擾','記憶體元件老化或硬體損壞'],sols:['嘗試重新投入電源','重新上電後立即確認各參數設定','若事先備份參數，可執行參數還原','若多次重新上電後仍發生，需送修'],rst:false,note:'warn',noteText:'建議定期使用操作面板備份參數，避免設定遺失。'},en:{n:'Memory Error',sl:'Critical',d:'Internal memory (EEPROM) abnormality detected; parameter settings may be lost.',causes:['Power interruption during parameter write','Strong electromagnetic interference','Memory component aging or hardware failure'],sols:['Try cycling power','Immediately verify parameter settings after power-on','If parameters were backed up, restore from backup','If error persists after multiple restarts, send for repair'],rst:false,note:'warn',noteText:'Regularly back up parameters using the operation panel to prevent data loss.'},ja:{n:'メモリエラー',sl:'重大',d:'内蔵メモリ（EEPROM）に異常が発生しました。パラメータ設定が失われる可能性があります。',causes:['パラメータ書き込み中の瞬時停電','強い電磁ノイズ','メモリ部品の老化またはハードウェア故障'],sols:['電源を再投入してみる','再投入後、直ちに各パラメータ設定を確認','事前にパラメータをバックアップしていた場合は復元する','複数回再投入後も発生する場合は修理が必要'],rst:false,note:'warn',noteText:'操作パネルを使用して定期的にパラメータをバックアップすることを推奨します。'}},
+E009:{s:'m',zh:{n:'欠電壓錯誤',sl:'警告',d:'逆變器主電源電壓下降至過低（200V 級約 160VDC，400V 級約 320VDC），為避免電路損壞切斷輸出。',causes:['電源供電中斷或瞬時停電','電源電壓過低或波動幅度過大','電源配線接觸不良、熔斷器斷路','長期使用後，主電路電容器劣化'],sols:['確認電源電壓在規格範圍內（200V 級：180~240VAC）','檢查電源配線、端子台接續，確認熔斷器狀態','考慮啟用瞬停不停功能 <span class="pm">[bA-30]</span>','若使用年限超過 10 年，考慮更換主電路電容'],rst:true,note:'info',noteText:'確認電源恢復後再進行重置操作。'},en:{n:'Undervoltage Error',sl:'Warning',d:'Main supply voltage dropped below threshold (200V: ~160VDC; 400V: ~320VDC); output tripped.',causes:['Power interruption or momentary power failure','Supply voltage too low or excessive fluctuation','Poor wiring connection or blown fuse','Capacitor degradation after long-term use'],sols:['Verify supply voltage within spec (200V class: 180~240VAC)','Check wiring, terminal connections, and fuse/breaker status','Consider enabling ride-through <span class="pm">[bA-30]</span>','If unit age exceeds 10 years, consider replacing main circuit capacitors'],rst:true,note:'info',noteText:'Confirm power has recovered before resetting.'},ja:{n:'不足電圧エラー',sl:'警告',d:'主電源電圧が低下しすぎました（200Vクラス：約160VDC、400Vクラス：約320VDC）。回路保護のため出力を遮断しました。',causes:['停電または瞬時停電','電源電圧が低すぎるまたは変動が大きい','配線接続不良またはヒューズ断線','長期使用による主回路コンデンサの劣化'],sols:['電源電圧が仕様範囲内か確認（200Vクラス：180~240VAC）','配線・端子台接続・ヒューズ・ブレーカーの状態確認','瞬停再起動機能 <span class="pm">[bA-30]</span> の有効化を検討','使用年数10年超の場合、主回路コンデンサ交換を検討'],rst:true,note:'info',noteText:'電源が復旧したことを確認してからリセットしてください。'}},
+E010:{s:'h',zh:{n:'電流檢測器錯誤',sl:'嚴重',d:'逆變器內建電流感測電路發生異常。',causes:['附近存在強烈電磁干擾源','電流檢測迴路硬體損壞'],sols:['確認附近是否有強干擾源，增加屏蔽或移除干擾源','重置後若仍發生，需聯繫服務人員維修'],rst:false,note:'warn',noteText:'此為硬體層級錯誤，若重置後仍發生，需要專業維修。'},en:{n:'Current Detector Error',sl:'Critical',d:'Internal current sensing circuit abnormality detected.',causes:['Strong electromagnetic interference nearby','Current detection circuit hardware failure'],sols:['Check for strong interference sources nearby; add shielding','If error persists after reset, contact service for repair'],rst:false,note:'warn',noteText:'This is a hardware-level error. If it persists after reset, professional repair is required.'},ja:{n:'電流検出器エラー',sl:'重大',d:'内蔵電流検出回路に異常が発生しました。',causes:['近くに強い電磁ノイズ源がある','電流検出回路のハードウェア故障'],sols:['近くに強いノイズ源がないか確認し、シールドを追加またはノイズ源を除去','リセット後も発生する場合はサービスに連絡して修理'],rst:false,note:'warn',noteText:'これはハードウェアレベルのエラーです。リセット後も発生する場合は専門の修理が必要です。'}},
+E011:{s:'h',zh:{n:'CPU 錯誤',sl:'嚴重',d:'逆變器內建 CPU 發生異常或誤動作，系統切斷輸出。',causes:['電磁干擾導致 CPU 誤動作','CPU 硬體損壞'],sols:['重新投入電源，若可恢復則可能是干擾所致','確認逆變器接地是否確實（PE 端子）','若重新上電後無法恢復，需聯繫服務人員更換主板'],rst:false,note:'warn',noteText:'若反覆發生，應檢查安裝環境的電磁干擾情況。'},en:{n:'CPU Error',sl:'Critical',d:'Internal CPU abnormality or malfunction; output tripped.',causes:['Electromagnetic interference causing CPU malfunction','CPU hardware failure'],sols:['Cycle power; if it recovers, interference is likely the cause','Verify proper grounding (PE terminal)','If cannot recover after power cycle, contact service to replace main board'],rst:false,note:'warn',noteText:'If this occurs repeatedly, inspect the installation environment for electromagnetic interference.'},ja:{n:'CPUエラー',sl:'重大',d:'内蔵CPUに異常または誤動作が発生し、出力を遮断しました。',causes:['電磁ノイズによるCPU誤動作','CPUのハードウェア故障'],sols:['電源を再投入。復旧する場合はノイズが原因の可能性','接地が確実か確認（PE端子）','再投入後も復旧しない場合は、メインボード交換のためサービスに連絡'],rst:false,note:'warn',noteText:'繰り返し発生する場合は、設置環境の電磁ノイズを点検してください。'}},
+E012:{s:'l',zh:{n:'外部跳脫錯誤',sl:'一般',d:'接收到外部裝置的跳脫信號（EXT 端子功能啟動），逆變器切斷輸出。此為正常的外部保護動作。',causes:['外部保護裝置（過熱繼電器、限位開關等）動作','端子邏輯接線錯誤（a/b 接點設定相反）','配線錯誤或端子接觸不良'],sols:['確認外部保護裝置的實際狀態，了解觸發原因','確認 EXT 端子的接點邏輯是否與外部裝置一致','檢查輸入端子 <span class="pm">[CA-01]～[CA-11]</span> 的功能設定'],rst:true,note:'info',noteText:'需優先確認外部設備狀態，再決定是否重置。'},en:{n:'External Trip Error',sl:'Info',d:'External trip signal received (EXT terminal active); output tripped. This is a normal external protection action.',causes:['External protection device (thermal relay, limit switch, etc.) activated','Terminal logic wiring error (a/b contact logic reversed)','Wiring error or poor terminal contact'],sols:['Check status of external protection devices to identify trigger','Verify EXT terminal contact logic matches external device','Check input terminal function settings <span class="pm">[CA-01]~[CA-11]</span>'],rst:true,note:'info',noteText:'Identify and resolve the external device condition before resetting.'},ja:{n:'外部トリップエラー',sl:'情報',d:'外部機器からのトリップ信号を受信しました（EXT端子機能が動作）。これは正常な外部保護動作です。',causes:['外部保護装置（サーマルリレー、リミットスイッチ等）の動作','端子ロジック配線誤り（a/b接点の設定が逆）','配線誤りまたは端子接触不良'],sols:['外部保護装置の実際の状態を確認し、動作原因を特定','EXT端子の接点ロジックが外部装置と一致しているか確認','入力端子機能設定 <span class="pm">[CA-01]～[CA-11]</span> を確認'],rst:true,note:'info',noteText:'外部機器の状態を確認・解決してからリセットしてください。'}},
+E013:{s:'l',zh:{n:'USP 錯誤（啟動自保護）',sl:'一般',d:'電源投入時偵測到運轉指令已處於 ON 狀態，為防止意外啟動而觸發保護。',causes:['電源投入前，運轉指令（FW/RV 端子）已在 ON 狀態','控制系統在停電後自動恢復輸出運轉指令'],sols:['確認電源投入前，運轉指令端子必須處於 OFF 狀態','重置後先確認運轉指令已關閉，再重新給予運轉指令'],rst:true,note:'info',noteText:'此為安全保護設計，建議由操作人員確認安全後再手動啟動。'},en:{n:'USP Error (Unattended Start Protection)',sl:'Info',d:'Run command detected as ON at power-on; protection triggered to prevent unintended start.',causes:['Run command (FW/RV terminal) was already ON before powering on','Control system automatically restored run command after power failure'],sols:['Confirm run command terminal is OFF before powering on','After reset, verify run command is OFF before re-issuing'],rst:true,note:'info',noteText:'This is a safety protection feature. Have an operator confirm safety before manually restarting.'},ja:{n:'USPエラー（不意起動防止）',sl:'情報',d:'電源投入時に運転指令がON状態であることを検出し、不意起動防止のため保護が動作しました。',causes:['電源投入前に運転指令（FW/RV端子）がすでにON状態','停電後に制御システムが自動的に運転指令を出力'],sols:['電源投入前に運転指令端子がOFFであることを確認','リセット後、運転指令がOFFであることを確認してから再度指令を与える'],rst:true,note:'info',noteText:'これは安全保護機能です。オペレーターが安全を確認してから手動で起動してください。'}},
+E014:{s:'h',zh:{n:'接地故障錯誤',sl:'嚴重',d:'電源投入時偵測到逆變器輸出與馬達之間存在接地故障，為保護逆變器切斷輸出。',causes:['馬達絕緣劣化，相線對地短路','配線老化、絕緣破損，導線接觸接地','潮濕環境造成絕緣電阻降低'],sols:['關閉電源後，拆除馬達配線，用絕緣電阻計測量對地絕緣電阻（應 >1MΩ）','確認接地故障位置後，更換老化配線或送修馬達','改善安裝環境，避免潮濕或腐蝕性氣體'],rst:false,note:'warn',noteText:'⚠️ 切勿在確認故障原因前就直接重置並上電，以免造成更大損壞甚至安全事故。'},en:{n:'Ground Fault Error',sl:'Critical',d:'Ground fault detected between inverter output and motor at power-on; output tripped to protect inverter.',causes:['Motor insulation degraded; phase-to-ground short','Aged wiring with damaged insulation contacting ground','Moisture reducing insulation resistance'],sols:['Power off, disconnect motor wiring, measure insulation resistance to ground (must be >1MΩ)','After identifying fault, replace aged wiring or send motor for repair','Improve environment — prevent moisture or corrosive gases'],rst:false,note:'warn',noteText:'⚠️ Do NOT reset and re-energize without identifying and resolving the fault — risk of greater damage or safety incident.'},ja:{n:'地絡エラー',sl:'重大',d:'電源投入時にインバータ出力とモーター間の地絡を検出し、インバータ保護のため出力を遮断しました。',causes:['モーター絶縁劣化による相間地絡','配線老化・絶縁破損による接地接触','湿気による絶縁抵抗低下'],sols:['電源を遮断後、モーター配線を外し、絶縁抵抗計で対地絶縁抵抗を測定（1MΩ以上必要）','地絡箇所特定後、劣化配線交換またはモーター修理','設置環境改善（湿気・腐食性ガスを防止）'],rst:false,note:'warn',noteText:'⚠️ 原因を特定・解決する前にリセット・投入しないでください。大きな損傷や安全事故につながる危険があります。'}},
+E016:{s:'m',zh:{n:'瞬時停電錯誤',sl:'警告',d:'發生瞬時停電時，系統切斷輸出。停電時間過長則視同一般電源中斷。',causes:['電源瞬間中斷（電網擾動、開關切換）','主電源 R/S/T 電壓降低'],sols:['確認電源品質，考慮加裝 UPS 不斷電系統','啟用瞬停重試功能 <span class="pm">[bA-30]</span>','若供電環境不穩定，考慮加裝穩壓器或 AC 電抗器'],rst:true,note:'info',noteText:''},en:{n:'Momentary Power Loss Error',sl:'Warning',d:'Momentary power loss detected; output tripped. If power loss is too long, treated as normal power failure.',causes:['Momentary power interruption (grid disturbance, switching)','Main supply R/S/T voltage drop'],sols:['Check power quality; consider installing UPS','Enable momentary power loss ride-through <span class="pm">[bA-30]</span>','If supply is unstable, consider voltage stabilizer or AC reactor'],rst:true,note:'info',noteText:''},ja:{n:'瞬時停電エラー',sl:'警告',d:'瞬時停電が発生したため、出力を遮断しました。停電時間が長すぎる場合は通常の停電として処理されます。',causes:['瞬時電源中断（電網擾乱、スイッチング）','主電源R/S/T電圧低下'],sols:['電源品質を確認し、UPS設置を検討','瞬停再起動機能 <span class="pm">[bA-30]</span> を有効化','電源が不安定な場合は安定化電源またはACリアクトルを検討'],rst:true,note:'info',noteText:''}},
+E019:{s:'h',zh:{n:'溫度檢測器錯誤',sl:'嚴重',d:'逆變器內部溫度感測元件發生異常。',causes:['溫度感測電路損壞','強烈電磁干擾'],sols:['確認安裝環境溫度是否在規格範圍內','若重置後仍發生，可能是溫度感測元件損壞，需維修'],rst:false,note:'warn',noteText:'此為硬體故障，需聯繫服務人員。'},en:{n:'Temperature Detector Error',sl:'Critical',d:'Internal temperature sensing element abnormality.',causes:['Temperature sensing circuit failure','Strong electromagnetic interference'],sols:['Verify ambient temperature is within specification','If error persists after reset, temperature sensor may be damaged — contact service'],rst:false,note:'warn',noteText:'This is a hardware fault. Contact service personnel.'},ja:{n:'温度検出器エラー',sl:'重大',d:'内蔵温度検出素子に異常が発生しました。',causes:['温度検出回路の故障','強い電磁ノイズ'],sols:['周囲温度が仕様範囲内か確認','リセット後も発生する場合は温度センサー故障の可能性があるため修理が必要'],rst:false,note:'warn',noteText:'ハードウェア故障です。サービス担当者に連絡してください。'}},
+E020:{s:'m',zh:{n:'冷卻風扇轉速降低錯誤',sl:'警告',d:'冷卻風扇轉速降低，冷卻效能不足，導致逆變器溫度過高，系統保護切斷輸出。',causes:['散熱鰭片或進氣口被粉塵堵塞','冷卻風扇軸承磨損，轉速下降','風扇電源線路異常或風扇損壞','安裝環境溫度過高，超過規格上限（50°C）'],sols:['關閉電源後清潔散熱鰭片與進氣口的積塵','確認逆變器安裝空間有足夠通風','若風扇轉速異常，需更換冷卻風扇','確認環境溫度在規格範圍內'],rst:true,note:'info',noteText:'冷卻風扇屬消耗品，建議每 2~3 年定期更換。'},en:{n:'Cooling Fan Speed Reduction Error',sl:'Warning',d:'Cooling fan speed dropped; reduced cooling; inverter overtemperature trip.',causes:['Heat sink or air intake blocked by dust','Cooling fan bearing worn','Fan power circuit abnormality or fan failure','Ambient temperature too high (above 50°C limit)'],sols:['Power off and clean dust from heat sink and air intake','Ensure adequate ventilation clearance around inverter','If fan speed is abnormal, replace cooling fan (consumable)','Verify ambient temperature within specification'],rst:true,note:'info',noteText:'Cooling fan is a consumable — recommended replacement every 2~3 years.'},ja:{n:'冷却ファン回転数低下エラー',sl:'警告',d:'冷却ファンの回転数が低下し、冷却性能が不足したためインバータ温度が上昇し、保護トリップしました。',causes:['ヒートシンクや吸気口のホコリ詰まり','冷却ファンの軸受磨耗による回転数低下','ファン電源回路の異常またはファン故障','設置環境温度が高すぎる（上限50°C超）'],sols:['電源遮断後、ヒートシンクと吸気口のホコリを清掃','インバータ周囲の通風スペースを確保','ファン回転数が異常な場合は冷却ファンを交換（消耗品）','周囲温度が仕様範囲内か確認'],rst:true,note:'info',noteText:'冷却ファンは消耗品です。2～3年ごとの定期交換を推奨します。'}},
+E021:{s:'h',zh:{n:'溫度錯誤（過熱保護）',sl:'嚴重',d:'逆變器內部溫度超過保護動作溫度，切斷輸出。請同時參閱 E020。',causes:['散熱鰭片嚴重積塵','安裝環境溫度過高','冷卻風扇完全停止運轉','逆變器持續過載運轉'],sols:['立即清潔散熱鰭片（關閉電源後執行）','確認並改善安裝環境的溫度條件','確認冷卻風扇是否正常運轉，必要時更換','降低負載或選用更大容量逆變器'],rst:true,note:'warn',noteText:'溫度冷卻後才能重置，重置後需確認散熱改善情況再恢復運轉。'},en:{n:'Temperature Error (Overheat Protection)',sl:'Critical',d:'Internal temperature exceeded protection threshold; output tripped. Also refer to E020.',causes:['Severely clogged heat sink','Ambient temperature too high','Cooling fan completely stopped','Continuous inverter overload'],sols:['Immediately clean heat sink fins (after powering off)','Verify and improve ambient temperature conditions','Check cooling fan operation; replace if necessary','Reduce load or select larger inverter'],rst:true,note:'warn',noteText:'Reset only after temperature has cooled. Confirm cooling improvement before resuming operation.'},ja:{n:'温度エラー（過熱保護）',sl:'重大',d:'内部温度が保護動作温度を超えたため、出力を遮断しました。E020も参照してください。',causes:['ヒートシンクの著しいホコリ詰まり','設置環境温度が高すぎる','冷却ファンが完全に停止','インバータの継続的な過負荷運転'],sols:['直ちにヒートシンクを清掃（電源遮断後）','設置環境の温度条件を確認・改善','冷却ファンの動作を確認し、必要であれば交換','負荷を低減するか、より大容量のインバータを選択'],rst:true,note:'warn',noteText:'温度が冷却されてからリセットしてください。運転再開前に冷却改善を確認してください。'}},
+E024:{s:'m',zh:{n:'輸入缺相錯誤',sl:'警告',d:'偵測到三相電源輸入有一相或多相斷路，電源不平衡保護動作。',causes:['電源配線有一相接觸不良或斷線','電源側熔斷器（保險絲）斷路','電力公司供電側缺相','採用單相輸入'],sols:['用電壓計測量輸入端 R、S、T 三相電壓，確認各相電壓正常','檢查主迴路輸入端子的配線鎖緊狀態','確認電源側配電盤熔斷器、斷路器狀態','確認輸入線以三相接線方式連接'],rst:true,note:'info',noteText:'需將 [bb-65] 設為 01 才會啟用此缺相檢測功能。'},en:{n:'Input Phase Loss Error',sl:'Warning',d:'Phase loss detected in three-phase input supply; protection activated.',causes:['One phase of supply wiring has poor contact or broken wire','Supply-side fuse blown','Phase loss from utility supply','Single-phase input connected'],sols:['Measure input voltages R, S, T with voltmeter; verify all phases normal','Check input terminal wiring tightness','Verify supply-side fuses and circuit breakers','Ensure input is connected as three-phase'],rst:true,note:'info',noteText:'Set [bb-65] to 01 to enable this phase loss detection function.'},ja:{n:'入力欠相エラー',sl:'警告',d:'三相電源入力の一相または複数相の断線を検出し、電源不平衡保護が動作しました。',causes:['電源配線の一相の接触不良または断線','電源側ヒューズ断線','電力会社の供給側欠相','単相入力での使用'],sols:['電圧計で入力端R・S・T三相電圧を測定し、各相電圧が正常か確認','主回路入力端子の配線締め付けを確認','電源側配電盤のヒューズ・ブレーカーの状態を確認','入力線を三相接線で接続されていることを確認'],rst:true,note:'info',noteText:'この欠相検出機能を有効にするには [bb-65] を01に設定してください。'}},
+E030:{s:'h',zh:{n:'IGBT 錯誤',sl:'嚴重',d:'發生瞬時過電流或主元件（IGBT）故障時，為保護主元件切斷輸出。',causes:['輸出線發生接地故障或短路','馬達轉動受拘束（堵轉）','IGBT 功率元件本身損壞'],sols:['電源斷開後，確認馬達配線及馬達是否有斷線或短路','拆除馬達配線後若仍發生故障，表示設備損壞，需進行維修','排除馬達受拘束的原因'],rst:false,note:'warn',noteText:'此錯誤若拆除馬達配線後仍持續，代表逆變器主電路損壞，需要專業維修。'},en:{n:'IGBT Error',sl:'Critical',d:'Instantaneous overcurrent or main element (IGBT) failure detected; output tripped to protect main elements.',causes:['Output wiring ground fault or short circuit','Motor rotor locked (stall)','IGBT power element failure'],sols:['Power off; check motor wiring for short circuit or broken wire','If error persists after disconnecting motor, equipment is damaged — send for repair','Remove cause of motor mechanical lock'],rst:false,note:'warn',noteText:'If error persists after disconnecting motor wiring, inverter main circuit is damaged. Professional repair required.'},ja:{n:'IGBTエラー',sl:'重大',d:'瞬時過電流または主素子（IGBT）故障が発生したため、主素子保護のため出力を遮断しました。',causes:['出力配線の地絡または短絡','モーターの拘束（ロック）','IGBTパワー素子の故障'],sols:['電源を遮断後、モーター配線の短絡または断線を確認','モーター配線を外しても故障が続く場合は、設備損傷のため修理が必要','モーター機械的拘束の原因を除去'],rst:false,note:'warn',noteText:'モーター配線を外しても発生し続ける場合は、インバータ主回路損傷です。専門の修理が必要です。'}},
+E034:{s:'m',zh:{n:'輸出缺相錯誤',sl:'警告',d:'偵測到逆變器輸出至馬達的三相配線有缺相（斷線、接觸不良或馬達內部斷線）。僅在 5Hz～100Hz 範圍內偵測。',causes:['輸出側配線（U、V、W）有斷線或接觸不良','馬達線圈內部斷線','電磁接觸器或端子台接點接觸不良','輸出為單相連接'],sols:['確認逆變器輸出端 U、V、W 至馬達的三相配線，用電阻計確認各相通路','拆除配線後用搖錶確認馬達三相線圈電阻是否平衡','確認中途電磁接觸器、端子台等接點狀態','將輸出線接成三相'],rst:true,note:'info',noteText:'需將 [bb-66] 設為 01 才會啟用此保護功能。'},en:{n:'Output Phase Loss Error',sl:'Warning',d:'Phase loss detected in output wiring to motor (broken wire, poor contact, or internal motor winding break). Detected only in 5Hz~100Hz range.',causes:['Output wiring (U, V, W) has broken wire or poor contact','Internal motor winding broken','Contactor or terminal block contact poor','Single-phase output connected'],sols:['Check three-phase output wiring U, V, W to motor with resistance meter','After disconnecting, use megohmmeter to verify three-phase motor winding resistance is balanced','Check intermediate contactors and terminal block contacts','Connect output as three-phase'],rst:true,note:'info',noteText:'Set [bb-66] to 01 to enable this protection function.'},ja:{n:'出力欠相エラー',sl:'警告',d:'インバータ出力からモーターへの三相配線に欠相を検出しました（断線、接触不良、またはモーター内部断線）。5Hz～100Hzの範囲でのみ検出。',causes:['出力配線（U、V、W）の断線または接触不良','モーター巻線の内部断線','電磁接触器または端子台の接点不良','単相出力での接続'],sols:['インバータ出力端U・V・Wからモーターへの三相配線を抵抗計で確認','配線を外した後、絶縁抵抗計でモーター三相巻線抵抗のバランスを確認','中継の電磁接触器・端子台の接点状態を確認','出力線を三相接線で接続'],rst:true,note:'info',noteText:'この保護機能を有効にするには [bb-66] を01に設定してください。'}},
+E035:{s:'m',zh:{n:'熱敏電阻錯誤',sl:'警告',d:'外部熱敏電阻偵測到溫度異常時，逆變器切斷輸出。',causes:['馬達冷卻不良，持續過重負載','熱敏電阻功能設定錯誤（[Cb-40]）','熱敏電阻元件故障','噪音干擾導致誤動作'],sols:['改善馬達冷卻環境，重新檢視驅動環境','確認 <span class="pm">[Cb-40]</span> 熱敏電阻功能設定是否正確','檢查熱敏電阻器是否正常','進行配線分離等噪音對策'],rst:true,note:'info',noteText:''},en:{n:'Thermistor Error',sl:'Warning',d:'External thermistor detected temperature abnormality; output tripped.',causes:['Poor motor cooling with continuous heavy load','Thermistor function setting error [Cb-40]','Thermistor element failure','Noise-induced malfunction'],sols:['Improve motor cooling environment','Verify thermistor function setting <span class="pm">[Cb-40]</span>','Check thermistor element condition','Separate wiring to reduce noise'],rst:true,note:'info',noteText:''},ja:{n:'サーミスターエラー',sl:'警告',d:'外部サーミスターが温度異常を検出したため、出力を遮断しました。',causes:['モーター冷却不良と継続的な重負荷','サーミスター機能設定誤り [Cb-40]','サーミスター素子の故障','ノイズによる誤動作'],sols:['モーター冷却環境を改善','サーミスター機能設定 <span class="pm">[Cb-40]</span> を確認','サーミスター素子の状態を確認','配線を分離してノイズ対策を実施'],rst:true,note:'info',noteText:''}},
+E039:{s:'h',zh:{n:'控制器（逆變器）過負載錯誤',sl:'嚴重',d:'逆變器本體的電子熱保護偵測到逆變器自身過載（保護逆變器本體，與 E005 馬達過載不同）。',causes:['長時間超過逆變器額定電流持續運轉','環境溫度過高，逆變器允許電流降低（降額）','頻繁加減速或重負載操作'],sols:['降低負載或選用更大容量的逆變器','確認安裝環境溫度，改善散熱條件','確認使用額定模式 <span class="pm">[Ub-03]</span>（LD/ND/HD）在額定電流範圍內','減少加減速頻率'],rst:true,note:'warn',noteText:'錯誤發生後 10 秒內不接受重置，請稍待後再操作。'},en:{n:'Inverter Overload Error',sl:'Critical',d:"Inverter's own electronic thermal protection detected overload of the inverter itself (distinct from E005 motor overload).",causes:['Continuous operation exceeding inverter rated current','High ambient temperature reducing inverter current rating','Frequent acceleration/deceleration or heavy load'],sols:['Reduce load or select larger inverter','Check ambient temperature; improve cooling','Verify load duty <span class="pm">[Ub-03]</span> (LD/ND/HD) is within rated current','Reduce frequency of acceleration/deceleration'],rst:true,note:'warn',noteText:'Reset is not accepted for 10 seconds after this error. Please wait before resetting.'},ja:{n:'コントローラ（インバータ）過負荷エラー',sl:'重大',d:'インバータ本体の電子サーマル保護がインバータ自身の過負荷を検出しました（E005モーター過負荷とは異なります）。',causes:['インバータ定格電流を超えた継続運転','高周囲温度によるインバータ電流定格低下','頻繁な加減速または重負荷運転'],sols:['負荷を低減するか、より大容量のインバータを選択','周囲温度を確認し、冷却を改善','負荷仕様 <span class="pm">[Ub-03]</span>（LD/ND/HD）が定格電流範囲内か確認','加減速頻度を低減'],rst:true,note:'warn',noteText:'このエラー後10秒間はリセット不可。しばらく待ってからリセットしてください。'}},
+E040:{s:'l',zh:{n:'操作面板通訊錯誤',sl:'一般',d:'操作面板（VOP）與通信線路因噪音干擾、接觸不良或斷線等導致逾時錯誤。',causes:['面板接線接觸不良或斷線','強烈噪音干擾通訊線路'],sols:['確認操作面板的連接線是否接觸良好','進行配線分離等噪音對策','可透過 <span class="pm">[UA-20]</span> 設定錯誤的有效與否'],rst:true,note:'info',noteText:''},en:{n:'Operation Panel Communication Error',sl:'Info',d:'Operation panel (VOP) communication timeout due to noise, poor contact, or broken wire.',causes:['Panel wiring poor contact or broken','Strong noise interfering with communication'],sols:['Verify panel connection wiring is properly seated','Separate wiring to reduce noise','Configure error validity via <span class="pm">[UA-20]</span>'],rst:true,note:'info',noteText:''},ja:{n:'操作パネル通信エラー',sl:'情報',d:'操作パネル（VOP）の通信がノイズ、接触不良、断線等によりタイムアウトしました。',causes:['パネル配線の接触不良または断線','強いノイズによる通信妨害'],sols:['パネル接続配線が正しく接続されているか確認','配線を分離してノイズ対策を実施','<span class="pm">[UA-20]</span> でエラーの有効/無効を設定可能'],rst:true,note:'info',noteText:''}},
+E041:{s:'l',zh:{n:'RS485 通訊錯誤',sl:'一般',d:'RS485 通訊（Modbus-RTU）因噪音、接觸不良或設定不一致等導致逾時。',causes:['通訊線接觸不良或斷線','噪音干擾通訊線路','與上位裝置的通訊設定不一致'],sols:['確認 RS485 配線是否接觸良好','進行配線分離等噪音對策','確認 <span class="pm">[CF-01]～[CF-08]</span> 通訊設定與上位裝置一致'],rst:true,note:'info',noteText:''},en:{n:'RS485 Communication Error',sl:'Info',d:'RS485 communication (Modbus-RTU) timeout due to noise, poor contact, or settings mismatch.',causes:['Communication wiring poor contact or broken','Noise interfering with communication','Settings mismatch with host device'],sols:['Verify RS485 wiring is properly connected','Separate wiring to reduce noise','Verify communication settings <span class="pm">[CF-01]~[CF-08]</span> match host device'],rst:true,note:'info',noteText:''},ja:{n:'RS485通信エラー',sl:'情報',d:'RS485通信（Modbus-RTU）がノイズ、接触不良、設定不一致等によりタイムアウトしました。',causes:['通信配線の接触不良または断線','ノイズによる通信妨害','上位機器との通信設定の不一致'],sols:['RS485配線が正しく接続されているか確認','配線を分離してノイズ対策を実施','通信設定 <span class="pm">[CF-01]～[CF-08]</span> が上位機器と一致しているか確認'],rst:true,note:'info',noteText:''}},
+E100:{s:'m',zh:{n:'編碼器斷線錯誤',sl:'警告',d:'與 P1-FB 回饋選用件相關的編碼器斷線錯誤。',causes:['編碼器配線斷線或接觸不良','編碼器本身損壞'],sols:['確認編碼器配線是否完好','確認編碼器是否正常運作','詳細請參閱《P1-FB 使用者指南》'],rst:true,note:'info',noteText:''},en:{n:'Encoder Disconnection Error',sl:'Warning',d:'Encoder disconnection error related to P1-FB feedback option card.',causes:['Encoder wiring broken or poor contact','Encoder itself damaged'],sols:['Verify encoder wiring is intact','Verify encoder is functioning normally','Refer to P1-FB User Guide for details'],rst:true,note:'info',noteText:''},ja:{n:'エンコーダ断線エラー',sl:'警告',d:'P1-FBフィードバックオプションカードに関連するエンコーダ断線エラーです。',causes:['エンコーダ配線の断線または接触不良','エンコーダ自体の損傷'],sols:['エンコーダ配線が完全であるか確認','エンコーダが正常に動作しているか確認','詳細はP1-FBユーザーガイドを参照'],rst:true,note:'info',noteText:''}},
+};
+
+const SYMPTOM_RULES={zh:[{keys:['啟動','起動','無法啟動','不動','不轉','啟不動'],codes:['E001','E009','E039'],tip:'馬達無法啟動，常見原因包含過電流保護（E001）、電源電壓不足（E009）。建議先確認電源電壓及加速時間設定。'},{keys:['加速','加速時','加速就','加速中'],codes:['E001','E039'],tip:'加速時跳脫，最常見為加速時間過短，建議延長加速時間 [FA-01]。'},{keys:['減速','減速時','減速中','停止時','煞車'],codes:['E007','E039'],tip:'減速時跳脫，通常是回生能量造成過電壓（E007），建議延長減速時間 [FA-12] 或加裝制動電阻器。'},{keys:['過熱','溫度高','熱當','散熱','風扇','積塵'],codes:['E020','E021'],tip:'溫度相關問題，請先關電源清潔散熱鰭片，確認冷卻風扇是否正常運轉。'},{keys:['電源','停電','電壓低','沒電','欠電'],codes:['E009','E016'],tip:'電源電壓問題，請確認三相電壓在規格範圍內（200V 級：180~240VAC）。'},{keys:['接地','漏電','絕緣'],codes:['E014'],tip:'⚠️ 可能存在接地故障，請關電源後用搖錶確認馬達及配線絕緣電阻，確認安全後再上電。'},{keys:['外部','EXT','外部跳'],codes:['E012'],tip:'外部跳脫信號觸發，需確認連接的外部保護裝置（過熱繼電器等）狀態。'},{keys:['缺相','斷相','三相不平衡'],codes:['E024','E034'],tip:'缺相保護動作，請確認三相電源配線及接續。'},{keys:['通訊','RS485','Modbus','面板通訊'],codes:['E040','E041'],tip:'通訊相關問題，請確認配線及通訊參數設定。'},{keys:['IGBT','主元件','短路'],codes:['E030'],tip:'⚠️ 主元件保護動作，請關電源確認馬達配線有無短路，若拆線後仍發生需送修。'},{keys:['如何重置','怎麼重置','重置','復歸','解除警報','警報清除'],codes:[],special:'reset'},{keys:['保養','維護','點檢','壽命','多久換'],codes:[],special:'maintenance'}],en:[{keys:['start','won\'t start','not start','not moving','cannot start','fails to start'],codes:['E001','E009','E039'],tip:'Motor cannot start. Common causes: overcurrent protection (E001) or insufficient supply voltage (E009). Check supply voltage and acceleration time settings.'},{keys:['accelerat','ramp up','during acceleration'],codes:['E001','E039'],tip:'Trip during acceleration. Most common cause: acceleration time too short. Try extending [FA-01].'},{keys:['decelerat','ramp down','during stop','braking'],codes:['E007','E039'],tip:'Trip during deceleration. Regenerative energy likely causing overvoltage (E007). Extend deceleration time [FA-12] or add braking resistor.'},{keys:['overheat','temperature','hot','fan','dust'],codes:['E020','E021'],tip:'Temperature issue. Power off and clean heat sink fins. Verify cooling fan is operating normally.'},{keys:['power','blackout','low voltage','power fail','undervoltage'],codes:['E009','E016'],tip:'Supply voltage issue. Verify three-phase voltage within specification (200V class: 180~240VAC).'},{keys:['ground','earth','insulation','leakage'],codes:['E014'],tip:'⚠️ Possible ground fault. Power off and measure insulation resistance before re-energizing.'},{keys:['external','EXT','external trip'],codes:['E012'],tip:'External trip signal received. Check connected external protection devices (thermal relay, etc.).'},{keys:['phase loss','missing phase','single phase'],codes:['E024','E034'],tip:'Phase loss protection activated. Check three-phase wiring and connections.'},{keys:['communicat','RS485','Modbus','panel comm'],codes:['E040','E041'],tip:'Communication issue. Check wiring and communication parameter settings.'},{keys:['how to reset','reset alarm','clear alarm','clear fault','reset error'],codes:[],special:'reset'},{keys:['maintenance','service','inspection','lifetime','when to replace'],codes:[],special:'maintenance'}],ja:[{keys:['起動','起動しない','回らない','動かない','起動できない'],codes:['E001','E009','E039'],tip:'モーターが起動できません。過電流保護（E001）または電源電圧不足（E009）が一般的な原因です。電源電圧と加速時間設定を確認してください。'},{keys:['加速','加速中','加速時'],codes:['E001','E039'],tip:'加速中にトリップ。最も一般的な原因は加速時間が短すぎること。[FA-01]の延長を試みてください。'},{keys:['減速','減速中','停止時','ブレーキ','制動'],codes:['E007','E039'],tip:'減速中にトリップ。回生エネルギーによる過電圧（E007）が原因の可能性。減速時間[FA-12]を延長するか制動抵抗器を追加してください。'},{keys:['過熱','温度','熱い','ファン','ホコリ'],codes:['E020','E021'],tip:'温度関連問題。電源を遮断してヒートシンクを清掃し、冷却ファンが正常に動作しているか確認してください。'},{keys:['電源','停電','電圧低','電圧不足'],codes:['E009','E016'],tip:'電源電圧問題。三相電圧が仕様範囲内か確認してください（200Vクラス：180~240VAC）。'},{keys:['地絡','漏電','絶縁'],codes:['E014'],tip:'⚠️ 地絡の可能性があります。電源遮断後、絶縁抵抗計で測定してから投入してください。'},{keys:['外部','EXT','外部トリップ'],codes:['E012'],tip:'外部トリップ信号を受信。接続されている外部保護装置（サーマルリレー等）の状態を確認してください。'},{keys:['欠相','断相','単相'],codes:['E024','E034'],tip:'欠相保護動作。三相電源の配線と接続を確認してください。'},{keys:['通信','RS485','Modbus','パネル通信'],codes:['E040','E041'],tip:'通信関連問題。配線と通信パラメータ設定を確認してください。'},{keys:['リセット','アラームリセット','エラーリセット','リセット方法','クリア'],codes:[],special:'reset'},{keys:['保守','点検','メンテナンス','寿命','交換周期'],codes:[],special:'maintenance'}]};
+
+let lang='zh',mode='ai',busy=false;
+
+function setLang(l){
+  lang=l;
+  ['btnZH','btnEN','btnJA'].forEach(id=>document.getElementById(id).className='lang-btn');
+  document.getElementById(l==='zh'?'btnZH':l==='en'?'btnEN':'btnJA').className='lang-btn on';
+  const t=I18N[l];
+  document.getElementById('hdrTitle').textContent=t.hdrTitle;
+  document.getElementById('hdrSub').textContent=t.hdrSub;
+  document.getElementById('hdrBadge').textContent=t.hdrBadge;
+  document.getElementById('langLabel').textContent=t.langLabel;
+  document.getElementById('sbSearch').placeholder=t.searchPH;
+  document.getElementById('welcomeTitle').textContent=t.welcomeTitle;
+  document.getElementById('welcomeDesc').innerHTML=t.welcomeDesc;
+  document.getElementById('modeLabel').textContent=t.modeLabel;
+  document.getElementById('modeAI').textContent=t.modeAI;
+  document.getElementById('modeDB').textContent=t.modeDB;
+  document.getElementById('inp').placeholder=t.inputPH;
+  document.getElementById('quickChips').innerHTML=t.chips.map(([q,label])=>`<button class="chip" onclick="ask('${q}')">${label}</button>`).join('');
+  renderSidebar();
+}
+
+function renderSidebar(filter=''){
+  const el=document.getElementById('sbList');
+  const f=filter.toLowerCase();
+  el.innerHTML=Object.entries(DB).filter(([k,v])=>{
+    const n=(v[lang]||v.zh).n;
+    return !f||(k.toLowerCase().includes(f)||n.toLowerCase().includes(f));
+  }).map(([k,v])=>{
+    const n=(v[lang]||v.zh).n;
+    return `<div class="sb-item" id="sb-${k}" onclick="ask('${k}')"><span class="sb-code">${k}</span><span class="sb-name">${n}</span><span class="sev sev-${v.s}"></span></div>`;
+  }).join('');
+}
+function filterSidebar(v){renderSidebar(v)}
+
+function addMsg(type,html){
+  const d=document.createElement('div');
+  d.className='msg '+type;
+  d.innerHTML=`<div class="av">${type==='ai'?'⚡':'👤'}</div><div class="bubble">${html}</div>`;
+  document.getElementById('chat').appendChild(d);
+  d.scrollIntoView({block:'end',behavior:'smooth'});
+  return d.querySelector('.bubble');
+}
+function showTyping(){const d=document.createElement('div');d.className='typing-wrap';d.id='typ';d.innerHTML='<div class="av">⚡</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>';document.getElementById('chat').appendChild(d);d.scrollIntoView({block:'end',behavior:'smooth'});}
+function rmTyping(){const t=document.getElementById('typ');if(t)t.remove();}
+function setSend(on){document.getElementById('sendBtn').disabled=!on;busy=!on;}
+function setMode(m){mode=m;document.getElementById('modeAI').className='mode-btn'+(m==='ai'?' on':'');document.getElementById('modeDB').className='mode-btn'+(m==='db'?' on':'');}
+
+function buildCard(code,entry){
+  const t=I18N[lang];
+  const d=entry[lang]||entry.zh;
+  const causes=d.causes.map(c=>`<li class="ci"><span>▸</span>${c}</li>`).join('');
+  const sols=d.sols.map(s=>`<li class="si">${s}</li>`).join('');
+  const noteHtml=d.noteText?`<div class="note note-${d.note}">${d.noteText}</div>`:'';
+  return `<div class="ecard ${entry.s}"><div class="ehead"><span class="ebadge">${code}</span><span class="ename">${d.n}</span><span class="stag stag-${entry.s}">${d.sl}</span></div><p style="font-size:12px;color:var(--muted);margin-bottom:8px;line-height:1.6">${d.d}</p><div class="sec">${t.causeTitle}</div><ul class="causes">${causes}</ul><div class="sec" style="margin-top:10px">${t.solTitle}</div><ul class="sols">${sols}</ul>${noteHtml}</div>`;
+}
+
+function dbLookup(text){
+  const t=text.toUpperCase().replace(/\s/g,'');
+  const m=t.match(/E(\d+)/g);
+  if(m){for(const code of m){const num=parseInt(code.slice(1));const k='E'+String(num).padStart(3,'0');if(DB[k])return{code:k,entry:DB[k]};}}
+  return null;
+}
+
+function smartAnalyze(q){
+  const t=q.toLowerCase();
+  for(const rule of (SYMPTOM_RULES[lang]||SYMPTOM_RULES.zh)){if(rule.keys.some(k=>t.includes(k)))return rule;}
+  return null;
+}
+
+function buildSpecialReply(special){
+  const t=I18N[lang];
+  if(special==='reset'){
+    const steps={zh:['確認故障原因已排除','確認運轉指令（FW/RV 端子）已關閉（OFF）','按操作面板上的 STOP/RESET 鍵','或將控制端子 RS（重置端子）設為 ON 再 OFF','確認面板錯誤代碼消除後，再給予運轉指令'],en:['Confirm the fault cause has been resolved','Confirm run command (FW/RV terminal) is OFF','Press STOP/RESET key on the operation panel','Or set control terminal RS (reset terminal) ON then OFF','Confirm error code is cleared, then re-issue run command'],ja:['故障原因が解決済みであることを確認','運転指令（FW/RV端子）がOFFであることを確認','操作パネルのSTOP/RESETキーを押す','または制御端子RS（リセット端子）をONにしてからOFFにする','エラーコードが消えたことを確認後、運転指令を与える']};
+    const warn={zh:'⚠️ E008、E010、E011、E014、E030 等嚴重錯誤，需確認硬體故障排除後才可重置，切勿強制重置。',en:'⚠️ For critical errors (E008, E010, E011, E014, E030), hardware fault must be resolved before resetting. Do not force reset.',ja:'⚠️ 重大エラー（E008、E010、E011、E014、E030等）は、ハードウェア故障を解決してからリセットしてください。強制リセットは禁止。'};
+    return `<strong>${t.resetTitle}</strong><br><br><ul class="causes" style="margin-top:6px">${(steps[lang]||steps.zh).map((s,i)=>`<li class="ci"><span>${i+1}</span>${s}</li>`).join('')}</ul><div class="note note-warn" style="margin-top:10px">${warn[lang]||warn.zh}</div>`;
+  }
+  if(special==='maintenance'){
+    const items={zh:[['每天','確認運轉狀態、異常音、散熱情況'],['每月','清潔散熱鰭片積塵、確認端子鎖緊狀態'],['每年','確認電解電容外觀、確認冷卻風扇運轉'],['2~3 年','更換冷卻風扇（消耗部品）'],['5~7 年','評估主電路電解電容更換']],en:[['Daily','Check operating status, abnormal noise, cooling condition'],['Monthly','Clean heat sink dust, verify terminal tightness'],['Annually','Inspect capacitor appearance, verify cooling fan operation'],['2~3 years','Replace cooling fan (consumable part)'],['5~7 years','Evaluate replacement of main circuit electrolytic capacitors']],ja:[['毎日','運転状態・異音・冷却状況の確認'],['毎月','ヒートシンクのホコリ清掃・端子締め付け確認'],['毎年','電解コンデンサ外観確認・冷却ファン動作確認'],['2～3年','冷却ファン交換（消耗品）'],['5～7年','主回路電解コンデンサ交換の検討']]};
+    return `<strong>${t.maintenanceTitle}</strong><br><br><ul class="sols">${(items[lang]||items.zh).map(([p,d])=>`<li class="si"><strong>${p}：</strong>${d}</li>`).join('')}</ul>`;
+  }
+  return '';
+}
+
+function smartReply(q){
+  const t=I18N[lang];
+  const db=dbLookup(q);
+  const rule=smartAnalyze(q);
+  if(db){
+    const others=rule&&rule.codes?rule.codes.filter(c=>c!==db.code).slice(0,2):[];
+    const otherHtml=others.length>0?`<div style="margin-top:10px;font-size:12px;color:var(--muted)">${t.relatedCodes}${others.map(c=>`<span class="pm" style="cursor:pointer" onclick="ask('${c}')">${c}</span>`).join(' ')}</div>`:'';
+    return `<strong>${db.code}</strong>：${buildCard(db.code,db.entry)}${otherHtml}`;
+  }
+  if(rule){if(rule.special)return buildSpecialReply(rule.special);const cards=rule.codes.slice(0,2).map(c=>DB[c]?`<div style="margin-top:8px">${buildCard(c,DB[c])}</div>`:'').join('');return `<strong>${t.smartResult}</strong><br><br><div class="note note-info" style="margin-bottom:10px">${rule.tip}</div>${cards}`;}
+  return t.notFound.replace('{q}',q);
+}
+
+function ask(q){document.getElementById('inp').value=q;send();}
+function onKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}
+function resize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,110)+'px';}
+
+function send(){
+  if(busy)return;
+  const inp=document.getElementById('inp');
+  const q=inp.value.trim();
+  if(!q)return;
+  inp.value='';inp.style.height='auto';
+  setSend(false);
+  addMsg('user',q);
+  document.querySelectorAll('.sb-item').forEach(e=>e.classList.remove('active'));
+  const db=dbLookup(q);
+  if(db){const si=document.getElementById('sb-'+db.code);if(si)si.classList.add('active');}
+  if(mode==='db'){if(db)addMsg('ai',buildCard(db.code,db.entry));else addMsg('ai',I18N[lang].noMatch);setSend(true);}
+  else{showTyping();setTimeout(()=>{rmTyping();addMsg('ai',smartReply(q));setSend(true);},500);}
+}
+
+setLang('zh');
+</script>
+</body>
+</html>

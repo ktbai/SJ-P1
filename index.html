@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>日立 SJ-P1 智能故障診斷</title>
+<title>SJ-P1 智能故障診斷 / Fault Diagnosis / 故障診断</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#0d0f14;--surf:#161921;--surf2:#1e2230;--surf3:#252a3a;--bdr:rgba(255,255,255,0.07);--bdr2:rgba(255,255,255,0.13);--txt:#dde2ee;--muted:#7a849a;--accent:#5b9cf6;--accent-dim:rgba(91,156,246,0.1);--danger:#f47a7a;--danger-dim:rgba(244,122,122,0.1);--warn:#f5a742;--warn-dim:rgba(245,167,66,0.1);--ok:#52c77a;--ok-dim:rgba(82,199,122,0.1);--mono:'IBM Plex Mono',monospace;--sans:'Noto Sans TC',sans-serif}
@@ -106,22 +106,34 @@ textarea.inp::placeholder{color:var(--muted)}
 .cursor{display:inline-block;width:2px;height:14px;background:var(--accent);margin-left:2px;animation:blink .8s infinite;vertical-align:middle}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
 @media(max-width:700px){.sb{display:none}}
+
+.lang-bar{background:var(--surf2);border-bottom:1px solid var(--bdr);padding:7px 16px;display:flex;align-items:center;gap:8px}
+.lang-label{font-size:11px;color:var(--muted)}
+.lang-btn{font-size:13px;padding:5px 14px;border-radius:20px;border:1px solid var(--bdr2);background:transparent;cursor:pointer;color:var(--muted);font-family:var(--sans);transition:all .15s}
+.lang-btn.on{background:var(--accent-dim);border-color:rgba(91,156,246,.4);color:var(--accent);font-weight:500}
 </style>
 </head>
 <body>
 <div class="hdr">
   <div class="hdr-logo">⚡</div>
   <div class="hdr-info">
-    <div class="hdr-title">SJ-P1 智能故障診斷助理</div>
+    <div class="hdr-title" id="hdrTitle">SJ-P1 智能故障診斷助理</div>
     <div class="hdr-sub">日立逆變器 · 全錯誤代碼 · 內建智能分析</div>
   </div>
   <div class="hdr-badge"><span class="hdr-dot"></span>智能診斷就緒</div>
 </div>
 
+
+<div class="lang-bar">
+  <span class="lang-label" id="langLabel">語言：</span>
+  <button class="lang-btn on" id="btnZH" onclick="setLang('zh')">🇹🇼 繁體中文</button>
+  <button class="lang-btn" id="btnEN" onclick="setLang('en')">🇺🇸 English</button>
+  <button class="lang-btn" id="btnJA" onclick="setLang('ja')">🇯🇵 日本語</button>
+</div>
 <div class="layout">
 <div class="sb">
   <div class="sb-head">
-    <input class="sb-search" type="text" placeholder="搜尋錯誤代碼或名稱…" oninput="filterSidebar(this.value)">
+    <input class="sb-search" type="text" id="sbSearch" placeholder="搜尋錯誤代碼或名稱…" oninput="filterSidebar(this.value)">
   </div>
   <div class="sb-list" id="sbList"></div>
 </div>
@@ -145,7 +157,7 @@ textarea.inp::placeholder{color:var(--muted)}
 
   <div class="input-wrap">
     <div class="mode-row">
-      <span class="mode-label">回答模式：</span>
+      <span class="mode-label" id="modeLabel">回答模式：</span>
       <button class="mode-btn on" id="modeAI" onclick="setMode('ai')">🧠 智能分析</button>
       <button class="mode-btn" id="modeDB" onclick="setMode('db')">📋 快速查詢</button>
     </div>
@@ -453,6 +465,42 @@ function send(){
     }, 600);
   }
 }
+
+// ── i18n ─────────────────────────────────────────────────────────────────────
+const I18N={
+zh:{hdrTitle:'SJ-P1 智能故障診斷助理',hdrSub:'日立變頻器 · 全錯誤代碼 · 內建智能分析',hdrBadge:'智能診斷就緒',langLabel:'語言：',searchPH:'搜尋錯誤代碼或名稱…',welcomeTitle:'👋 SJ-P1 智能故障診斷助理',welcomeDesc:'輸入面板上顯示的<strong>錯誤代碼</strong>（如 E001），或用<strong>自然語言描述問題</strong>（如「馬達減速時跳脫」）。智能引擎將分析並給出排查建議。',modeLabel:'回答模式：',modeAI:'🧠 智能分析',modeDB:'📋 快速查詢',inputPH:'輸入錯誤代碼或描述症狀…',chips:[['E001 過電流','E001 過電流'],['E007 過電壓','E007 過電壓'],['E005 馬達過載','E005 過載'],['如何重置錯誤警報','如何重置警報'],['保養週期建議','保養週期']]},
+en:{hdrTitle:'SJ-P1 Smart Fault Diagnosis',hdrSub:'Hitachi Inverter · All Error Codes · Built-in Intelligence',hdrBadge:'System Ready',langLabel:'Language: ',searchPH:'Search error code or name…',welcomeTitle:'👋 SJ-P1 Smart Fault Diagnosis',welcomeDesc:'Enter the <strong>error code</strong> shown on the panel (e.g. E001), or <strong>describe the symptom</strong> in plain language. The built-in engine will analyze and provide troubleshooting guidance.',modeLabel:'Mode: ',modeAI:'🧠 Smart Analysis',modeDB:'📋 Quick Lookup',inputPH:'Enter error code or describe symptom…',chips:[['E001 Overcurrent','E001 Overcurrent'],['E007 Overvoltage','E007 Overvoltage'],['E005 Motor Overload','E005 Overload'],['How to reset alarm','How to reset'],['Maintenance schedule','Maintenance']]},
+ja:{hdrTitle:'SJ-P1 スマート故障診断',hdrSub:'日立インバータ · 全エラーコード · 内蔵インテリジェント分析',hdrBadge:'システム準備完了',langLabel:'言語：',searchPH:'エラーコードまたは名称を検索…',welcomeTitle:'👋 SJ-P1 スマート故障診断',welcomeDesc:'パネルに表示された<strong>エラーコード</strong>（例：E001）を入力するか、<strong>症状を説明</strong>してください。内蔵エンジンが分析・対策を提示します。',modeLabel:'モード：',modeAI:'🧠 スマート分析',modeDB:'📋 クイック検索',inputPH:'エラーコードまたは症状を入力…',chips:[['E001 過電流','E001 過電流'],['E007 過電圧','E007 過電圧'],['E005 モーター過負荷','E005 過負荷'],['アラームのリセット方法','リセット方法'],['保守・点検周期','保守周期']]}
+};
+
+let lang='zh';
+
+function setLang(l){
+  lang=l;
+  ['btnZH','btnEN','btnJA'].forEach(id=>{const b=document.getElementById(id);if(b)b.className='lang-btn';});
+  const btn=document.getElementById(l==='zh'?'btnZH':l==='en'?'btnEN':'btnJA');
+  if(btn)btn.className='lang-btn on';
+  const t=I18N[l];
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  const setH=(id,v)=>{const e=document.getElementById(id);if(e)e.innerHTML=v;};
+  set('hdrTitle',t.hdrTitle);
+  set('hdrSub',t.hdrSub);
+  set('hdrBadge',t.hdrBadge);
+  set('langLabel',t.langLabel);
+  const sb=document.getElementById('sbSearch');if(sb)sb.placeholder=t.searchPH;
+  set('welcomeTitle',t.welcomeTitle);
+  setH('welcomeDesc',t.welcomeDesc);
+  set('modeLabel',t.modeLabel);
+  const ai=document.getElementById('modeAI');if(ai)ai.textContent=t.modeAI;
+  const db=document.getElementById('modeDB');if(db)db.textContent=t.modeDB;
+  const inp=document.getElementById('inp');if(inp)inp.placeholder=t.inputPH;
+  const qc=document.getElementById('quickChips');
+  if(qc)qc.innerHTML=t.chips.map(([q,label])=>`<button class="chip" onclick="ask('${q}')">${label}</button>`).join('');
+  renderSidebar();
+}
+
+// init lang
+setLang("zh");
 </script>
 </body>
 </html>

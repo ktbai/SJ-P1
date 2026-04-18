@@ -118,9 +118,9 @@ textarea.inp::placeholder{color:var(--muted)}
   <div class="hdr-logo">⚡</div>
   <div class="hdr-info">
     <div class="hdr-title" id="hdrTitle">SJ-P1 智能故障診斷助理</div>
-    <div class="hdr-sub">日立逆變器 · 全錯誤代碼 · 內建智能分析</div>
+    <div class="hdr-sub" id="hdrSub">日立變頻器 · 全錯誤代碼 · 內建智能分析</div>
   </div>
-  <div class="hdr-badge"><span class="hdr-dot"></span>智能診斷就緒</div>
+  <div class="hdr-badge"><span class="hdr-dot"></span><span id="hdrBadge">智能診斷就緒</span></div>
 </div>
 
 
@@ -133,7 +133,7 @@ textarea.inp::placeholder{color:var(--muted)}
 <div class="layout">
 <div class="sb">
   <div class="sb-head">
-    <input class="sb-search" type="text" id="sbSearch" placeholder="搜尋錯誤代碼或名稱…" oninput="filterSidebar(this.value)">
+    <input class="sb-search" type="text" id="sbSearch" placeholder="搜尋錯誤代碼或名稱…" id="sbSearch" oninput="filterSidebar(this.value)">
   </div>
   <div class="sb-list" id="sbList"></div>
 </div>
@@ -141,8 +141,8 @@ textarea.inp::placeholder{color:var(--muted)}
 <div class="main">
   <div class="chat" id="chat">
     <div class="welcome">
-      <div class="wt">👋 SJ-P1 AI 故障診斷助理</div>
-      <div class="wd">輸入面板上顯示的<strong>錯誤代碼</strong>（如 E001），或用<strong>自然語言描述問題</strong>（如「馬達減速時跳脫」）。AI 將根據完整說明書為您分析並給出排查建議。</div>
+      <div class="wt" id="welcomeTitle">👋 SJ-P1 智能故障診斷助理</div>
+      <div class="wd" id="welcomeDesc">輸入面板上顯示的<strong>錯誤代碼</strong>（如 E001），或用<strong>自然語言描述問題</strong>（如「馬達減速時跳脫」）。智能引擎將分析並給出排查建議。</div>
       <div class="chips" id="quickChips">
         <button class="chip" onclick="ask('E001 過電流')">E001 過電流</button>
         <button class="chip" onclick="ask('E007 過電壓')">E007 過電壓</button>

@@ -1,4 +1,4 @@
-<!-- SJ-P1 v5.3 強制清空 2026-04-20 -->
+<!-- SJ-P1 v6.0 功能導航 2026-04-20 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -157,6 +157,46 @@ textarea.inp::placeholder{color:var(--muted)}
 .lang-btn.on{background:var(--accent-dim);border-color:rgba(91,156,246,.4);color:var(--accent);font-weight:500}
 
 .result-card{padding:20px;animation:fadeIn .2s ease}
+
+.tab-bar{background:var(--surf);border-bottom:1px solid var(--bdr);display:flex;gap:0;padding:0 16px}
+.tab-btn{font-size:13px;padding:11px 18px;border:none;background:transparent;cursor:pointer;color:var(--muted);font-family:var(--sans);border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap}
+.tab-btn.on{color:var(--accent);border-bottom-color:var(--accent);font-weight:500}
+.tab-btn:hover{color:var(--txt)}
+.tab-panel{display:none;flex:1;flex-direction:column;overflow:hidden}
+.tab-panel.on{display:flex}
+.nav-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:20px;overflow-y:auto}
+.nav-card{background:var(--surf);border:1px solid var(--bdr);border-radius:12px;padding:16px;cursor:pointer;transition:all .15s;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px}
+.nav-card:hover{border-color:var(--accent);background:var(--accent-dim);transform:translateY(-2px)}
+.nav-card:active{transform:translateY(0)}
+.nav-icon{font-size:28px}
+.nav-title{font-size:13px;font-weight:500;color:var(--txt)}
+.nav-desc{font-size:11px;color:var(--muted);line-height:1.4}
+.nav-section{padding:8px 20px 4px;font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);grid-column:1/-1}
+.func-result{padding:20px;overflow-y:auto;flex:1}
+.func-card{background:var(--surf);border:1px solid var(--bdr);border-radius:12px;padding:20px;max-width:700px}
+.func-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.func-icon{font-size:32px}
+.func-title{font-size:18px;font-weight:500}
+.func-subtitle{font-size:12px;color:var(--muted);margin-top:2px}
+.func-section{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:16px 0 8px}
+.func-steps{list-style:none;display:flex;flex-direction:column;gap:6px}
+.func-step{display:flex;gap:10px;font-size:13px;padding:8px 12px;background:var(--surf2);border-radius:8px;line-height:1.6;border-left:2px solid var(--accent)}
+.func-step-num{color:var(--accent);font-weight:500;font-family:var(--mono);flex-shrink:0}
+.func-params{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.func-param{font-family:var(--mono);font-size:12px;background:rgba(91,156,246,.15);color:var(--accent);padding:3px 8px;border-radius:5px}
+.func-note{margin-top:12px;font-size:12px;padding:8px 12px;border-radius:7px;line-height:1.6;background:rgba(91,156,246,.08);border-left:2px solid var(--accent)}
+.func-warn{margin-top:12px;font-size:12px;padding:8px 12px;border-radius:7px;line-height:1.6;background:rgba(244,122,122,.08);border-left:2px solid var(--danger)}
+.back-btn{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer;padding:6px 12px;border-radius:6px;border:1px solid var(--bdr);background:transparent;font-family:var(--sans);margin-bottom:14px;transition:all .15s}
+.back-btn:hover{color:var(--txt);border-color:var(--bdr2)}
+@media(max-width:700px){
+  .nav-grid{grid-template-columns:repeat(2,1fr);padding:12px;gap:8px}
+  .nav-card{padding:12px}
+  .nav-icon{font-size:22px}
+  .nav-title{font-size:12px}
+  .nav-desc{font-size:10px}
+  .tab-btn{font-size:12px;padding:9px 12px}
+  .func-result{padding:12px}
+}
 </style>
 </head>
 <body>
@@ -175,7 +215,20 @@ textarea.inp::placeholder{color:var(--muted)}
   <button class="lang-btn" id="btnEN" onclick="document.getElementById('resultArea').innerHTML='';setLang('en')">🇺🇸 English</button>
   <button class="lang-btn" id="btnJA" onclick="document.getElementById('resultArea').innerHTML='';setLang('ja')">🇯🇵 日本語</button>
 </div>
+<div class="tab-bar">
+  <button class="tab-btn on" id="tabNav" onclick="switchTab('nav')">⚡ 功能導航</button>
+  <button class="tab-btn" id="tabDiag" onclick="switchTab('diag')">🔧 故障診斷</button>
+</div>
 <div class="mobile-sb" id="mobileSb"></div>
+
+<!-- Nav Panel -->
+<div class="tab-panel" id="panelNav">
+  <div id="navGrid" class="nav-grid"></div>
+  <div id="funcResult" class="func-result" style="display:none"></div>
+</div>
+
+<!-- Diag Panel -->
+<div class="tab-panel on" id="panelDiag">
 <div class="layout">
 <div class="sb">
   <div class="sb-head">
@@ -217,6 +270,7 @@ textarea.inp::placeholder{color:var(--muted)}
   </div>
 </div>
 </div>
+</div><!-- /panelDiag -->
 
 <script>
 // ── Error DB (full list from Chapter 18) ──────────────────────────────────────
@@ -592,8 +646,508 @@ function setLang(l){
   renderSidebar();
   renderMobileSidebar();
 }
+
+// ── Tab switching ─────────────────────────────────────────────────────────────
+function switchTab(tab){
+  document.getElementById('tabNav').className='tab-btn'+(tab==='nav'?' on':'');
+  document.getElementById('tabDiag').className='tab-btn'+(tab==='diag'?' on':'');
+  document.getElementById('panelNav').className='tab-panel'+(tab==='nav'?' on':'');
+  document.getElementById('panelDiag').className='tab-panel'+(tab==='diag'?' on':'');
+  if(tab==='nav') renderNavGrid();
+}
+
+// ── Navigation data ───────────────────────────────────────────────────────────
+const NAV_DATA = {
+  zh:{
+    sections:[
+      {label:'🔰 初次設定', items:[
+        {id:'motor-param',icon:'📋',title:'馬達銘牌參數輸入',desc:'第一步必做，影響所有保護'},
+        {id:'panel-run',icon:'▶️',title:'面板啟動馬達',desc:'最簡單的第一次測試方法'},
+        {id:'max-freq',icon:'🔢',title:'設定最高運轉頻率',desc:'防止馬達超速損壞'},
+        {id:'accel-decel',icon:'⏱️',title:'加速與減速時間',desc:'解決啟動衝擊與停車抖動'},
+      ]},
+      {label:'⚙️ 速度與控制', items:[
+        {id:'terminal-ctrl',icon:'🔌',title:'外部端子控制啟停',desc:'接按鈕或 PLC 控制'},
+        {id:'analog-speed',icon:'🎛️',title:'類比信號調速',desc:'電位計或 4-20mA 控速'},
+        {id:'multi-speed',icon:'🔢',title:'多段速設定',desc:'不同工序用不同速度'},
+        {id:'fwd-rev',icon:'🔄',title:'正逆轉切換',desc:'攪拌機、輸送帶換方向'},
+        {id:'jog',icon:'👆',title:'點動（JOG）功能',desc:'設備調試對位必用'},
+      ]},
+      {label:'🛡️ 保護設定', items:[
+        {id:'thermal',icon:'🌡️',title:'電子熱保護電流',desc:'保護馬達最重要的設定'},
+        {id:'freq-limit',icon:'📉',title:'頻率上下限設定',desc:'防止過低速過熱或超速'},
+        {id:'stall',icon:'⚠️',title:'失速防止設定',desc:'避免加速時頻繁跳 E001'},
+        {id:'power-loss',icon:'🔁',title:'瞬停自動重啟',desc:'停電後自動恢復，生產線必要'},
+        {id:'carrier',icon:'🔊',title:'載波頻率調整',desc:'馬達噪音太大時調整'},
+      ]},
+      {label:'🔧 維護管理', items:[
+        {id:'backup',icon:'💾',title:'參數備份與還原',desc:'換機前必做，避免設定遺失'},
+        {id:'factory-reset',icon:'🔄',title:'恢復出廠設定',desc:'設定混亂時重新開始'},
+        {id:'run-time',icon:'⏰',title:'查詢累積運轉時間',desc:'判斷保養時機'},
+        {id:'fan-check',icon:'🌀',title:'冷卻風扇確認',desc:'E020 最常見原因'},
+      ]},
+      {label:'📡 進階應用', items:[
+        {id:'rs485',icon:'🔗',title:'RS485 通訊設定',desc:'接 PLC 或 SCADA 系統'},
+        {id:'pid',icon:'🎯',title:'PID 控制設定',desc:'水泵壓力、恆溫控制'},
+        {id:'password',icon:'🔒',title:'參數密碼保護',desc:'防止誤改重要參數'},
+        {id:'monitor',icon:'📊',title:'監控輸出狀態',desc:'日常巡檢確認運轉狀態'},
+      ]},
+    ]
+  },
+  en:{
+    sections:[
+      {label:'🔰 Initial Setup', items:[
+        {id:'motor-param',icon:'📋',title:'Motor Nameplate Parameters',desc:'Must do first — affects all protection'},
+        {id:'panel-run',icon:'▶️',title:'Panel Start Motor',desc:'Easiest first test method'},
+        {id:'max-freq',icon:'🔢',title:'Set Maximum Frequency',desc:'Prevent motor overspeed damage'},
+        {id:'accel-decel',icon:'⏱️',title:'Acceleration & Deceleration Time',desc:'Fix startup shock and stopping vibration'},
+      ]},
+      {label:'⚙️ Speed & Control', items:[
+        {id:'terminal-ctrl',icon:'🔌',title:'Terminal Control (Start/Stop)',desc:'Connect button or PLC control'},
+        {id:'analog-speed',icon:'🎛️',title:'Analog Speed Control',desc:'Potentiometer or 4-20mA speed control'},
+        {id:'multi-speed',icon:'🔢',title:'Multi-Speed Settings',desc:'Different speeds for different processes'},
+        {id:'fwd-rev',icon:'🔄',title:'Forward/Reverse Switching',desc:'Mixer, conveyor direction change'},
+        {id:'jog',icon:'👆',title:'JOG Function',desc:'Essential for equipment positioning'},
+      ]},
+      {label:'🛡️ Protection Settings', items:[
+        {id:'thermal',icon:'🌡️',title:'Electronic Thermal Protection',desc:'Most important motor protection setting'},
+        {id:'freq-limit',icon:'📉',title:'Frequency Upper/Lower Limit',desc:'Prevent low speed overheating or overspeed'},
+        {id:'stall',icon:'⚠️',title:'Stall Prevention',desc:'Avoid frequent E001 trips during acceleration'},
+        {id:'power-loss',icon:'🔁',title:'Auto-restart After Power Loss',desc:'Auto recovery after power failure'},
+        {id:'carrier',icon:'🔊',title:'Carrier Frequency Adjustment',desc:'Reduce motor noise'},
+      ]},
+      {label:'🔧 Maintenance', items:[
+        {id:'backup',icon:'💾',title:'Parameter Backup & Restore',desc:'Must do before replacing unit'},
+        {id:'factory-reset',icon:'🔄',title:'Factory Reset',desc:'Restart from default settings'},
+        {id:'run-time',icon:'⏰',title:'Check Accumulated Run Time',desc:'Determine maintenance timing'},
+        {id:'fan-check',icon:'🌀',title:'Cooling Fan Check',desc:'Most common cause of E020'},
+      ]},
+      {label:'📡 Advanced', items:[
+        {id:'rs485',icon:'🔗',title:'RS485 Communication Setup',desc:'Connect to PLC or SCADA'},
+        {id:'pid',icon:'🎯',title:'PID Control Setup',desc:'Pump pressure, temperature control'},
+        {id:'password',icon:'🔒',title:'Parameter Password Protection',desc:'Prevent accidental parameter changes'},
+        {id:'monitor',icon:'📊',title:'Monitor Output Status',desc:'Daily inspection of operating status'},
+      ]},
+    ]
+  },
+  ja:{
+    sections:[
+      {label:'🔰 初期設定', items:[
+        {id:'motor-param',icon:'📋',title:'モーター銘板パラメータ入力',desc:'最初に必ず行う — 全保護に影響'},
+        {id:'panel-run',icon:'▶️',title:'パネルからモーターを起動',desc:'最も簡単な最初のテスト方法'},
+        {id:'max-freq',icon:'🔢',title:'最高運転周波数の設定',desc:'モーターの過速度損傷を防止'},
+        {id:'accel-decel',icon:'⏱️',title:'加速・減速時間',desc:'起動時の衝撃と停止時の振動を解消'},
+      ]},
+      {label:'⚙️ 速度・制御', items:[
+        {id:'terminal-ctrl',icon:'🔌',title:'外部端子による起動・停止制御',desc:'ボタンまたはPLC制御の接続'},
+        {id:'analog-speed',icon:'🎛️',title:'アナログ信号による速度制御',desc:'ポテンショメータまたは4-20mAで速度制御'},
+        {id:'multi-speed',icon:'🔢',title:'多段速設定',desc:'工程ごとに異なる速度を設定'},
+        {id:'fwd-rev',icon:'🔄',title:'正逆転切替',desc:'ミキサー、コンベアの方向切替'},
+        {id:'jog',icon:'👆',title:'点動（JOG）機能',desc:'設備の位置決め調整に必須'},
+      ]},
+      {label:'🛡️ 保護設定', items:[
+        {id:'thermal',icon:'🌡️',title:'電子サーマル保護電流',desc:'最も重要なモーター保護設定'},
+        {id:'freq-limit',icon:'📉',title:'周波数上下限設定',desc:'低速過熱または過速度を防止'},
+        {id:'stall',icon:'⚠️',title:'失速防止設定',desc:'加速中のE001頻発を回避'},
+        {id:'power-loss',icon:'🔁',title:'瞬停自動再起動',desc:'停電後の自動復旧、生産ラインに必要'},
+        {id:'carrier',icon:'🔊',title:'キャリア周波数調整',desc:'モーター騒音を低減'},
+      ]},
+      {label:'🔧 保守管理', items:[
+        {id:'backup',icon:'💾',title:'パラメータバックアップ・復元',desc:'交換前に必ず実施'},
+        {id:'factory-reset',icon:'🔄',title:'工場出荷設定に戻す',desc:'設定が混乱した場合にリセット'},
+        {id:'run-time',icon:'⏰',title:'累積運転時間の確認',desc:'保守のタイミングを判断'},
+        {id:'fan-check',icon:'🌀',title:'冷却ファンの確認',desc:'E020の最も一般的な原因'},
+      ]},
+      {label:'📡 応用設定', items:[
+        {id:'rs485',icon:'🔗',title:'RS485通信設定',desc:'PLCまたはSCADAへの接続'},
+        {id:'pid',icon:'🎯',title:'PID制御設定',desc:'ポンプ圧力・温度制御'},
+        {id:'password',icon:'🔒',title:'パラメータパスワード保護',desc:'誤ったパラメータ変更を防止'},
+        {id:'monitor',icon:'📊',title:'出力状態のモニタリング',desc:'日常点検での運転状態確認'},
+      ]},
+    ]
+  }
+};
+
+// ── Function detail content ───────────────────────────────────────────────────
+const FUNC_DETAIL = {
+  'motor-param':{
+    zh:{title:'馬達銘牌參數輸入',subtitle:'第一步必做 — 影響所有保護功能的正確性',
+      steps:['關閉電源，找到馬達銘牌（通常在馬達側面）','記錄以下數值：額定功率、額定電壓、額定電流、額定頻率、額定轉速（RPM）、極數','開啟變頻器電源，進入參數設定模式','設定馬達容量 [Hb102]：輸入馬達銘牌上的 kW 數值','設定馬達極數 [Hb103]：通常為 2、4 或 6 極','設定基底頻率 [Hb104]：通常為 50Hz（台灣）或 60Hz','設定馬達額定電流 [Hb108]：輸入銘牌上的電流值（A）','設定完成後建議執行自動調諧 [HA-01]=01，讓變頻器自動測量馬達參數'],
+      params:['Hb102','Hb103','Hb104','Hb108','HA-01'],
+      note:'完成馬達參數輸入後，電子熱保護才能正確保護馬達。這是最重要的第一步，請勿跳過。'},
+    en:{title:'Motor Nameplate Parameter Input',subtitle:'Must do first — affects accuracy of all protection functions',
+      steps:['Power off and locate the motor nameplate (usually on the motor side)','Record the following values: rated power, rated voltage, rated current, rated frequency, rated speed (RPM), number of poles','Power on the inverter and enter parameter setting mode','Set motor capacity [Hb102]: enter the kW value from the nameplate','Set number of poles [Hb103]: typically 2, 4, or 6 poles','Set base frequency [Hb104]: typically 50Hz or 60Hz','Set motor rated current [Hb108]: enter the current value (A) from the nameplate','After setting, it is recommended to run auto-tuning [HA-01]=01 to let the inverter automatically measure motor parameters'],
+      params:['Hb102','Hb103','Hb104','Hb108','HA-01'],
+      note:'Electronic thermal protection can only correctly protect the motor after motor parameters are entered. This is the most important first step — do not skip it.'},
+    ja:{title:'モーター銘板パラメータ入力',subtitle:'最初に必ず実施 — 全保護機能の正確性に影響',
+      steps:['電源を遮断し、モーター銘板を確認（通常はモーター側面）','以下の数値を記録：定格出力、定格電圧、定格電流、定格周波数、定格回転数（RPM）、極数','インバータの電源を投入し、パラメータ設定モードに入る','モーター容量 [Hb102] を設定：銘板のkW値を入力','極数 [Hb103] を設定：通常2、4、または6極','基底周波数 [Hb104] を設定：通常50Hzまたは60Hz','モーター定格電流 [Hb108] を設定：銘板の電流値（A）を入力','設定完了後、自動調整 [HA-01]=01 の実行を推奨'],
+      params:['Hb102','Hb103','Hb104','Hb108','HA-01'],
+      note:'モーターパラメータを入力して初めて、電子サーマル保護が正確にモーターを保護できます。最も重要な最初のステップです。省略しないでください。'}
+  },
+  'panel-run':{
+    zh:{title:'面板啟動馬達',subtitle:'最簡單的測試方法，適合第一次試車',
+      steps:['確認馬達接線正確（U、V、W 對應馬達三相）','確認電源電壓正常後投入電源','設定運轉指令來源 [AA111]=02（操作面板）','設定頻率指令來源 [AA101]=02（操作面板）或 [AA101]=07（參數設定）','設定目標頻率 [FA-01]：建議先設定 10~20Hz 測試','按下面板 RUN 鍵啟動馬達','確認馬達轉向正確，若相反請調換 U、V、W 任意兩相'],
+      params:['AA111','AA101','FA-01'],
+      note:'第一次啟動建議使用低頻（10~20Hz）確認馬達運轉正常後，再逐步提高頻率。'},
+    en:{title:'Panel Start Motor',subtitle:'Easiest test method, suitable for first commissioning',
+      steps:['Verify motor wiring is correct (U, V, W corresponding to motor three phases)','Verify supply voltage is normal, then power on','Set run command source [AA111]=02 (operation panel)','Set frequency command source [AA101]=02 (panel) or [AA101]=07 (parameter setting)','Set target frequency [FA-01]: recommend 10~20Hz for initial test','Press RUN key on panel to start motor','Verify motor rotation direction is correct; if reversed, swap any two of U, V, W'],
+      params:['AA111','AA101','FA-01'],
+      note:'For the first startup, use low frequency (10~20Hz) to confirm normal motor operation before gradually increasing frequency.'},
+    ja:{title:'パネルからモーターを起動',subtitle:'最も簡単なテスト方法、初回試運転に最適',
+      steps:['モーター配線が正しいことを確認（U、V、WがモーターのU、V、Wに対応）','電源電圧が正常であることを確認してから電源を投入','運転指令元 [AA111]=02（操作パネル）に設定','周波数指令元 [AA101]=02（パネル）または [AA101]=07（パラメータ設定）に設定','目標周波数 [FA-01] を設定：初回は10~20Hzを推奨','パネルのRUNキーを押してモーターを起動','モーターの回転方向が正しいことを確認。逆の場合はU、V、Wのうち任意の2本を入れ替える'],
+      params:['AA111','AA101','FA-01'],
+      note:'初回起動は低周波数（10~20Hz）でモーターの正常動作を確認してから、徐々に周波数を上げてください。'}
+  },
+  'max-freq':{
+    zh:{title:'設定最高運轉頻率',subtitle:'保護馬達不超速，依負載特性設定',
+      steps:['確認馬達銘牌的額定頻率（台灣通常為 60Hz）','進入參數設定，設定最高頻率 [Hb105]：通常設定為馬達額定頻率，不建議超過額定值太多','設定頻率上限 [bA102]：這是實際運轉的最高頻率限制','設定頻率下限 [bA104]：避免馬達在過低速運轉導致散熱不足（建議最低 10~15Hz）'],
+      params:['Hb105','bA102','bA104'],
+      note:'若需要超頻運轉（超過馬達額定頻率），請先確認馬達軸承和機械結構能承受更高轉速，並詢問馬達廠商。'},
+    en:{title:'Set Maximum Operating Frequency',subtitle:'Protect motor from overspeed, set according to load characteristics',
+      steps:['Check the motor nameplate rated frequency (typically 60Hz)','Enter parameter settings, set maximum frequency [Hb105]: typically set to motor rated frequency','Set frequency upper limit [bA102]: this is the actual maximum operating frequency limit','Set frequency lower limit [bA104]: prevent insufficient cooling from too-low speed operation (recommend minimum 10~15Hz)'],
+      params:['Hb105','bA102','bA104'],
+      note:'If over-frequency operation is required (exceeding motor rated frequency), first confirm that the motor bearings and mechanical structure can handle higher speeds.'},
+    ja:{title:'最高運転周波数の設定',subtitle:'モーターの過速度を防止、負荷特性に応じて設定',
+      steps:['モーター銘板の定格周波数を確認（通常60Hz）','パラメータ設定に入り、最高周波数 [Hb105] を設定：通常モーター定格周波数に設定','周波数上限 [bA102] を設定：実際の最高運転周波数制限','周波数下限 [bA104] を設定：低速運転による冷却不足を防止（最低10~15Hzを推奨）'],
+      params:['Hb105','bA102','bA104'],
+      note:'定格周波数を超える運転が必要な場合は、モーターの軸受や機械構造がより高い回転数に耐えられることを事前に確認してください。'}
+  },
+  'accel-decel':{
+    zh:{title:'加速與減速時間設定',subtitle:'解決啟動衝擊、過電流跳脫與停車抖動',
+      steps:['了解加速時間定義：從 0Hz 加速到最高頻率所需的時間','設定加速時間 [FA-10]（第1加速時間）：建議從 10~30 秒開始，若跳 E001 則繼續延長','了解減速時間定義：從最高頻率減速到 0Hz 所需的時間','設定減速時間 [FA-12]（第1減速時間）：建議從 10~30 秒開始，若跳 E007 則繼續延長','若需要第2組加減速時間（如多段速切換），設定 [FA-11] 和 [FA-13]','選擇加速曲線模式 [AC-03]：00=線性（一般用途）、01=S曲線（適合輸送帶）'],
+      params:['FA-10','FA-12','FA-11','FA-13','AC-03'],
+      note:'加速時間太短 → 跳 E001（過電流）。減速時間太短 → 跳 E007（過電壓）。遇到這兩種跳脫，延長對應的時間即可解決。'},
+    en:{title:'Acceleration & Deceleration Time Settings',subtitle:'Fix startup shock, overcurrent trips and stopping vibration',
+      steps:['Understand acceleration time definition: time required to accelerate from 0Hz to maximum frequency','Set acceleration time [FA-10] (1st acceleration time): start with 10~30 seconds; if E001 trips, increase further','Understand deceleration time definition: time required to decelerate from maximum frequency to 0Hz','Set deceleration time [FA-12] (1st deceleration time): start with 10~30 seconds; if E007 trips, increase further','If a 2nd set of accel/decel times is needed (e.g., multi-speed switching), set [FA-11] and [FA-13]','Select acceleration curve mode [AC-03]: 00=Linear (general use), 01=S-curve (suitable for conveyors)'],
+      params:['FA-10','FA-12','FA-11','FA-13','AC-03'],
+      note:'Acceleration time too short → E001 trip (overcurrent). Deceleration time too short → E007 trip (overvoltage). For either trip, extending the corresponding time will resolve it.'},
+    ja:{title:'加速・減速時間の設定',subtitle:'起動時の衝撃、過電流トリップ、停止時の振動を解消',
+      steps:['加速時間の定義を理解：0Hzから最高周波数まで加速するのに必要な時間','加速時間 [FA-10]（第1加速時間）を設定：10~30秒から始め、E001がトリップする場合はさらに延長','減速時間の定義を理解：最高周波数から0Hzまで減速するのに必要な時間','減速時間 [FA-12]（第1減速時間）を設定：10~30秒から始め、E007がトリップする場合はさらに延長','第2の加減速時間が必要な場合（多段速切替など）、[FA-11] と [FA-13] を設定','加速カーブモード [AC-03] を選択：00=線形（汎用）、01=Sカーブ（コンベア向け）'],
+      params:['FA-10','FA-12','FA-11','FA-13','AC-03'],
+      note:'加速時間が短すぎる → E001トリップ（過電流）。減速時間が短すぎる → E007トリップ（過電圧）。どちらのトリップも、対応する時間を延長することで解決できます。'}
+  },
+  'terminal-ctrl':{
+    zh:{title:'外部端子控制啟停',subtitle:'用外部按鈕、繼電器或 PLC 控制變頻器啟停',
+      steps:['設定運轉指令來源 [AA111]=00（端子台控制）','確認端子台接線：FW 端子（正轉啟動）接至外部開關一端，CM 端子接至外部開關另一端','若需逆轉指令：RV 端子接至逆轉開關，CM 端子接至開關另一端','FW 端子 ON → 正轉運轉；OFF → 停止','若同時有 FW 和 RV ON → 視為停止指令','確認端子邏輯（a接點/b接點）：[CA-21]~[CA-31]，出廠預設為 a 接點（NO）'],
+      params:['AA111','CA-01','CA-21'],
+      note:'出廠預設 FW 端子分配在第 9 號端子，RV 在第 8 號端子。端子分配可透過 [CA-01]~[CA-11] 變更。'},
+    en:{title:'Terminal Control (Start/Stop)',subtitle:'Control inverter start/stop with external buttons, relays, or PLC',
+      steps:['Set run command source [AA111]=00 (terminal block control)','Check terminal wiring: FW terminal (forward start) to one side of external switch, CM terminal to other side','For reverse: RV terminal to reverse switch, CM terminal to other side','FW terminal ON → forward run; OFF → stop','If both FW and RV are ON simultaneously → treated as stop command','Verify terminal logic (a-contact/b-contact): [CA-21]~[CA-31], factory default is a-contact (NO)'],
+      params:['AA111','CA-01','CA-21'],
+      note:'Factory default: FW terminal assigned to terminal 9, RV to terminal 8. Terminal assignment can be changed via [CA-01]~[CA-11].'},
+    ja:{title:'外部端子による起動・停止制御',subtitle:'外部ボタン、リレー、またはPLCでインバータを制御',
+      steps:['運転指令元 [AA111]=00（端子台制御）に設定','端子台配線を確認：FW端子（正転起動）を外部スイッチの一端に接続、CM端子を他端に接続','逆転が必要な場合：RV端子を逆転スイッチに、CM端子をスイッチの他端に接続','FW端子ON → 正転運転；OFF → 停止','FWとRVが同時にON → 停止指令として処理','端子ロジック（a接点/b接点）を確認：[CA-21]～[CA-31]、工場出荷設定はa接点（NO）'],
+      params:['AA111','CA-01','CA-21'],
+      note:'工場出荷設定：FW端子は9番端子、RVは8番端子に割り当て済み。端子割り当ては [CA-01]～[CA-11] で変更可能。'}
+  },
+  'analog-speed':{
+    zh:{title:'類比信號調速',subtitle:'用電位計（0-10V）或電流信號（4-20mA）控制轉速',
+      steps:['設定頻率指令來源 [AA101]=01（Ai1 端子，電壓輸入）或 [AA101]=12（Ai2 端子，電流輸入）','電壓輸入（0-10V）：將電位計接至 Ai1（+）和 GND（-）端子','電流輸入（4-20mA）：將信號線接至 Ai2 端子，確認 SW2 開關設為電流模式','調整增益 [Ab-40]（Ai1 增益）：設定 10V 對應的最高頻率百分比','調整偏移 [Ab-42]（Ai1 偏移）：設定 0V 對應的起始頻率百分比','測試：轉動電位計確認頻率隨之變化'],
+      params:['AA101','Ab-40','Ab-42'],
+      note:'若使用 4-20mA 信號，請確認 PCB 上的 SW2 開關切換至電流（I）模式，否則讀值不正確。'},
+    en:{title:'Analog Speed Control',subtitle:'Control speed with potentiometer (0-10V) or current signal (4-20mA)',
+      steps:['Set frequency command source [AA101]=01 (Ai1 terminal, voltage input) or [AA101]=12 (Ai2 terminal, current input)','Voltage input (0-10V): connect potentiometer to Ai1 (+) and GND (-) terminals','Current input (4-20mA): connect signal to Ai2 terminal, confirm SW2 switch is set to current mode','Adjust gain [Ab-40] (Ai1 gain): set the maximum frequency percentage corresponding to 10V','Adjust offset [Ab-42] (Ai1 offset): set the starting frequency percentage corresponding to 0V','Test: turn potentiometer to confirm frequency changes accordingly'],
+      params:['AA101','Ab-40','Ab-42'],
+      note:'If using 4-20mA signal, confirm the SW2 switch on the PCB is switched to current (I) mode; otherwise readings will be incorrect.'},
+    ja:{title:'アナログ信号による速度制御',subtitle:'ポテンショメータ（0-10V）または電流信号（4-20mA）で速度制御',
+      steps:['周波数指令元 [AA101]=01（Ai1端子、電圧入力）または [AA101]=12（Ai2端子、電流入力）に設定','電圧入力（0-10V）：ポテンショメータをAi1（+）とGND（-）端子に接続','電流入力（4-20mA）：信号線をAi2端子に接続し、SW2スイッチが電流モードになっていることを確認','ゲイン [Ab-40]（Ai1ゲイン）を調整：10Vに対応する最高周波数のパーセンテージを設定','オフセット [Ab-42]（Ai1オフセット）を調整：0Vに対応する開始周波数のパーセンテージを設定','テスト：ポテンショメータを回して周波数が変化することを確認'],
+      params:['AA101','Ab-40','Ab-42'],
+      note:'4-20mA信号を使用する場合、基板上のSW2スイッチが電流（I）モードになっていることを確認してください。そうでないと正しく読み取れません。'}
+  },
+  'multi-speed':{
+    zh:{title:'多段速設定',subtitle:'為不同工序設定不同的運轉速度，最多可設定 15 段速',
+      steps:['設定多段速指令來源 [Ab-03]：00=二進位16速、01=位元8速','設定各段速頻率：1速 [Ab-11]、2速 [Ab-12]、3速 [Ab-13]（依序設定需要的段數）','設定輸入端子功能：[CA-01]~[CA-11] 中分配 CF1（003）、CF2（004）、CF3（005）給對應端子','端子組合對應段速（二進位方式）：CF1=1速，CF1+CF2=3速，依此類推','若需各段速獨立的加減速時間：設定 [AC-02]=01 啟用多段加減速模式'],
+      params:['Ab-03','Ab-11','Ab-12','Ab-13','CA-01','AC-02'],
+      note:'多段速功能非常適合輸送帶、攪拌機等需要在不同工序使用不同速度的設備。'},
+    en:{title:'Multi-Speed Settings',subtitle:'Set different operating speeds for different processes, up to 15 speed steps',
+      steps:['Set multi-speed command source [Ab-03]: 00=binary 16-speed, 01=bit 8-speed','Set frequency for each speed step: speed 1 [Ab-11], speed 2 [Ab-12], speed 3 [Ab-13] (set required steps in order)','Set input terminal functions: assign CF1 (003), CF2 (004), CF3 (005) to corresponding terminals in [CA-01]~[CA-11]','Terminal combination to speed step (binary method): CF1=speed 1, CF1+CF2=speed 3, and so on','If independent accel/decel time is needed for each speed: set [AC-02]=01 to enable multi-speed accel/decel mode'],
+      params:['Ab-03','Ab-11','Ab-12','Ab-13','CA-01','AC-02'],
+      note:'Multi-speed function is ideal for conveyors, mixers, and other equipment that requires different speeds for different processes.'},
+    ja:{title:'多段速設定',subtitle:'工程ごとに異なる運転速度を設定、最大15段速',
+      steps:['多段速指令元 [Ab-03] を設定：00=2進数16速、01=ビット8速','各段速の周波数を設定：1速 [Ab-11]、2速 [Ab-12]、3速 [Ab-13]（必要な段数を順に設定）','入力端子機能を設定：[CA-01]～[CA-11] でCF1（003）、CF2（004）、CF3（005）を対応端子に割り当て','端子の組み合わせと段速の対応（2進数方式）：CF1=1速、CF1+CF2=3速、以下同様','各段速に独立した加減速時間が必要な場合：[AC-02]=01 で多段加減速モードを有効化'],
+      params:['Ab-03','Ab-11','Ab-12','Ab-13','CA-01','AC-02'],
+      note:'多段速機能は、異なる工程で異なる速度が必要なコンベア、ミキサーなどの設備に最適です。'}
+  },
+  'fwd-rev':{
+    zh:{title:'正逆轉切換',subtitle:'讓馬達可以雙方向旋轉',
+      steps:['方法一（面板切換）：設定 [AA-12]=01 讓 RUN 鍵啟動逆轉，=00 為正轉','方法二（端子切換）：FW 端子 ON = 正轉，RV 端子 ON = 逆轉','設定 RV 端子 [CA-02]=002（RV 端子功能）','若需防止逆轉：設定 [AA-04]=01 禁止逆轉指令','注意：正逆轉切換前，確認機械負載允許反轉，避免損壞設備'],
+      params:['AA-12','CA-02','AA-04'],
+      warn:'部分機械（如單向泵浦、特定輸送帶）禁止逆轉。切換前請確認設備允許反轉。'},
+    en:{title:'Forward/Reverse Switching',subtitle:'Enable bi-directional motor rotation',
+      steps:['Method 1 (panel switching): set [AA-12]=01 for RUN key to start reverse rotation, =00 for forward','Method 2 (terminal switching): FW terminal ON = forward, RV terminal ON = reverse','Set RV terminal [CA-02]=002 (RV terminal function)','To prevent reverse rotation: set [AA-04]=01 to prohibit reverse run command','Note: before switching forward/reverse, confirm mechanical load allows reverse rotation to avoid equipment damage'],
+      params:['AA-12','CA-02','AA-04'],
+      warn:'Some machinery (such as single-direction pumps, certain conveyors) prohibits reverse rotation. Confirm the equipment allows reverse before switching.'},
+    ja:{title:'正逆転切替',subtitle:'モーターの双方向回転を有効化',
+      steps:['方法1（パネル切替）：[AA-12]=01 でRUNキーが逆転起動、=00 で正転','方法2（端子切替）：FW端子ON = 正転、RV端子ON = 逆転','RV端子 [CA-02]=002（RV端子機能）に設定','逆転を防止する場合：[AA-04]=01 で逆転指令を禁止','注意：正逆転切替前に、機械負荷が逆転可能かどうかを確認し、設備損傷を避ける'],
+      params:['AA-12','CA-02','AA-04'],
+      warn:'一部の機械（片方向ポンプ、特定のコンベアなど）は逆転が禁止されています。切替前に設備が逆転可能かどうかを確認してください。'}
+  },
+  'jog':{
+    zh:{title:'點動（JOG）功能',subtitle:'按住按鈕時低速運轉，放開即停止，適合設備對位調試',
+      steps:['設定點動頻率 [Ab-12]：建議 5~10Hz（點動時的低速）','設定輸入端子功能，將某一端子分配為 JOG 功能（功能代碼 005）：[CA-01]~[CA-11] 中設定 =005','JOG 端子 ON → 馬達以點動頻率運轉；OFF → 馬達停止','也可從操作面板點動：按住 JOG 鍵（某些面板版本）','設定點動加速時間 [AC-05] 和點動減速時間 [AC-06]（通常設短一些）'],
+      params:['Ab-12','CA-01','AC-05','AC-06'],
+      note:'點動功能適合設備調試、輸送帶對位、機械手臂定位等需要精確控制的場合。'},
+    en:{title:'JOG Function',subtitle:'Run at low speed while button is pressed, stop when released — ideal for positioning and commissioning',
+      steps:['Set JOG frequency [Ab-12]: recommend 5~10Hz (low speed for jogging)','Set input terminal function, assign a terminal to JOG function (function code 005): set =005 in [CA-01]~[CA-11]','JOG terminal ON → motor runs at JOG frequency; OFF → motor stops','Can also JOG from operation panel: press and hold JOG key (some panel versions)','Set JOG acceleration time [AC-05] and JOG deceleration time [AC-06] (usually set short)'],
+      params:['Ab-12','CA-01','AC-05','AC-06'],
+      note:'JOG function is suitable for equipment commissioning, conveyor positioning, robotic arm positioning, and other applications requiring precise control.'},
+    ja:{title:'点動（JOG）機能',subtitle:'ボタンを押している間だけ低速運転、離すと停止 — 位置決め・調試に最適',
+      steps:['JOG周波数 [Ab-12] を設定：5~10Hzを推奨（点動時の低速）','入力端子機能を設定し、JOG機能（機能コード005）を端子に割り当て：[CA-01]～[CA-11] で =005 に設定','JOG端子ON → モーターがJOG周波数で運転；OFF → モーター停止','操作パネルからも点動可能：JOGキーを押し続ける（一部パネルバージョン）','JOG加速時間 [AC-05] とJOG減速時間 [AC-06] を設定（通常は短めに設定）'],
+      params:['Ab-12','CA-01','AC-05','AC-06'],
+      note:'JOG機能は、設備の調試、コンベアの位置決め、ロボットアームの位置決めなど、精密な制御が必要な場面に適しています。'}
+  },
+  'thermal':{
+    zh:{title:'電子熱保護電流設定',subtitle:'最重要的馬達保護設定，防止馬達過熱燒毀',
+      steps:['找到馬達銘牌上的額定電流（A）','設定電子熱保護等級 [bC110]：輸入馬達額定電流值（如銘牌為 5.0A 則設 5.0）','確認保護動作設定 [bC112]：00=跳脫並停止（推薦）、01=警告繼續運轉','若馬達是變頻專用馬達（有強制冷卻風扇），設定 [bC111]=01（可提升低速保護能力）','測試：讓馬達在高負載下運轉，確認過載時是否正確跳出 E005'],
+      params:['bC110','bC111','bC112'],
+      warn:'電子熱保護電流設定錯誤（設太大）會導致馬達過熱燒毀。請務必按照銘牌額定電流設定，不可設定超過銘牌值。'},
+    en:{title:'Electronic Thermal Protection Current Setting',subtitle:'Most important motor protection setting — prevents motor overheating and burnout',
+      steps:['Find the rated current (A) on the motor nameplate','Set electronic thermal protection level [bC110]: enter motor rated current value (e.g., if nameplate shows 5.0A, set to 5.0)','Confirm protection action setting [bC112]: 00=trip and stop (recommended), 01=warning continue operation','If motor is an inverter-duty motor (with forced cooling fan), set [bC111]=01 (improves low-speed protection)','Test: run motor under high load and confirm E005 trips correctly when overloaded'],
+      params:['bC110','bC111','bC112'],
+      warn:'Incorrect thermal protection current setting (set too high) will cause motor overheating and burnout. Always set according to the nameplate rated current — do not set above the nameplate value.'},
+    ja:{title:'電子サーマル保護電流の設定',subtitle:'最も重要なモーター保護設定 — モーターの過熱・焼損を防止',
+      steps:['モーター銘板の定格電流（A）を確認','電子サーマル保護レベル [bC110] を設定：モーター定格電流値を入力（例：銘板が5.0Aなら5.0に設定）','保護動作設定 [bC112] を確認：00=トリップして停止（推奨）、01=警告して運転継続','モーターがインバータ専用モーター（強制冷却ファン付き）の場合、[bC111]=01 に設定','テスト：高負荷でモーターを運転し、過負荷時にE005が正しくトリップすることを確認'],
+      params:['bC110','bC111','bC112'],
+      warn:'電子サーマル保護電流の設定が誤っている（大きすぎる）と、モーターが過熱・焼損します。必ず銘板の定格電流に従って設定し、銘板値を超えて設定しないでください。'}
+  },
+  'freq-limit':{
+    zh:{title:'頻率上下限設定',subtitle:'限制運轉頻率範圍，防止過低速過熱或超速損壞',
+      steps:['設定頻率上限 [bA102]：馬達允許的最高運轉頻率（Hz），通常設為馬達額定頻率','設定頻率下限 [bA104]：建議設定 10~15Hz 以上，避免馬達低速散熱不足','確認上下限選擇 [bA101]：00=有效（套用上下限）','測試：嘗試輸入超出上限的頻率指令，確認變頻器自動限制在上限值'],
+      params:['bA101','bA102','bA104'],
+      note:'頻率下限設太低（如 0Hz）時，馬達在極低速長時間運轉會因散熱不足而過熱。除非是 VF 馬達（含強制冷卻風扇），否則建議最低 10Hz 以上。'},
+    en:{title:'Frequency Upper/Lower Limit Settings',subtitle:'Limit operating frequency range to prevent low-speed overheating or overspeed damage',
+      steps:['Set frequency upper limit [bA102]: maximum allowable motor operating frequency (Hz), typically set to motor rated frequency','Set frequency lower limit [bA104]: recommend setting above 10~15Hz to avoid insufficient cooling at low speed','Confirm upper/lower limit selection [bA101]: 00=enabled (apply limits)','Test: try entering a frequency command above the upper limit and confirm inverter automatically limits to the upper limit value'],
+      params:['bA101','bA102','bA104'],
+      note:'If the frequency lower limit is set too low (e.g., 0Hz), the motor may overheat from insufficient cooling during extended low-speed operation. Unless using a VF motor (with forced cooling fan), minimum 10Hz is recommended.'},
+    ja:{title:'周波数上下限の設定',subtitle:'運転周波数範囲を制限し、低速過熱や過速度損傷を防止',
+      steps:['周波数上限 [bA102] を設定：モーターの最高許容運転周波数（Hz）、通常モーター定格周波数に設定','周波数下限 [bA104] を設定：低速時の冷却不足を避けるため10~15Hz以上を推奨','上下限選択 [bA101] を確認：00=有効（制限を適用）','テスト：上限を超える周波数指令を入力し、インバータが自動的に上限値に制限することを確認'],
+      params:['bA101','bA102','bA104'],
+      note:'周波数下限を低く設定しすぎると（例：0Hz）、長時間の低速運転で冷却不足によりモーターが過熱する可能性があります。VFモーター（強制冷却ファン付き）でない限り、最低10Hz以上を推奨します。'}
+  },
+  'stall':{
+    zh:{title:'失速防止設定',subtitle:'避免加速時因電流過大頻繁跳脫 E001',
+      steps:['啟用過電流抑制功能 [bA120]=01（加速中失速防止）','設定過電流抑制等級 [bA121]：建議設定為變頻器額定電流的 150~170%','啟用減速中失速防止 [bA130]=01（減速中防止過電壓）','設定失速防止動作時的加速時間 [bA124]：設定較長的值讓系統有時間調整','效果：加速中電流過大時，自動延緩加速速度，直到電流恢復正常再繼續加速'],
+      params:['bA120','bA121','bA130','bA124'],
+      note:'失速防止功能啟用後，實際加速時間可能比設定值長，這是正常的保護動作，不是故障。'},
+    en:{title:'Stall Prevention Settings',subtitle:'Avoid frequent E001 trips due to excessive current during acceleration',
+      steps:['Enable overcurrent suppression function [bA120]=01 (stall prevention during acceleration)','Set overcurrent suppression level [bA121]: recommend 150~170% of inverter rated current','Enable stall prevention during deceleration [bA130]=01 (overvoltage prevention during deceleration)','Set acceleration time during stall prevention action [bA124]: set a longer value to give the system time to adjust','Effect: when current is too high during acceleration, automatically slows the acceleration rate until current returns to normal'],
+      params:['bA120','bA121','bA130','bA124'],
+      note:'When stall prevention is enabled, the actual acceleration time may be longer than the set value. This is a normal protection action, not a fault.'},
+    ja:{title:'失速防止の設定',subtitle:'加速中の過電流によるE001頻発トリップを回避',
+      steps:['過電流抑制機能 [bA120]=01 を有効化（加速中の失速防止）','過電流抑制レベル [bA121] を設定：インバータ定格電流の150~170%を推奨','減速中の失速防止 [bA130]=01 を有効化（減速中の過電圧防止）','失速防止動作時の加速時間 [bA124] を設定：システムが調整する時間を確保するため長めの値を設定','効果：加速中に電流が大きすぎる場合、電流が正常に戻るまで自動的に加速速度を遅らせる'],
+      params:['bA120','bA121','bA130','bA124'],
+      note:'失速防止が有効になっている場合、実際の加速時間は設定値より長くなることがあります。これは正常な保護動作であり、故障ではありません。'}
+  },
+  'power-loss':{
+    zh:{title:'瞬停自動重啟設定',subtitle:'電源瞬間中斷後自動恢復運轉，生產線不中斷',
+      steps:['設定瞬停不停機模式 [bA-30]：01=減速停止後重啟、02=直流電壓恆定控制','設定重啟等待時間 [bA-31]：復電後等待多少秒再重啟（通常 0.5~2 秒）','設定瞬停不停機目標電壓 [bA-32]：通常設為輸入電壓的 √2 倍（200V 機種設約 280V）','設定瞬停無停止減速時間 [bA-34]：停電時的減速時間','測試：短暫切斷電源後確認能自動重啟'],
+      params:['bA-30','bA-31','bA-32','bA-34'],
+      warn:'瞬停重啟功能有安全風險。若設備操作人員可能在停電時靠近機器，請謹慎使用此功能，並加裝適當的安全裝置。'},
+    en:{title:'Auto-restart After Power Loss Settings',subtitle:'Automatically resume operation after momentary power interruption — keep production line running',
+      steps:['Set momentary power loss ride-through mode [bA-30]: 01=decelerate stop then restart, 02=DC voltage constant control','Set restart waiting time [bA-31]: how many seconds to wait after power recovery before restarting (typically 0.5~2 seconds)','Set ride-through target voltage [bA-32]: typically set to √2 times input voltage (for 200V class, set approximately 280V)','Set deceleration time during power loss [bA-34]: deceleration time during power failure','Test: briefly cut power and confirm auto-restart occurs'],
+      params:['bA-30','bA-31','bA-32','bA-34'],
+      warn:'Auto-restart function has safety risks. If equipment operators may approach the machine during a power failure, use this function with caution and install appropriate safety devices.'},
+    ja:{title:'瞬停自動再起動の設定',subtitle:'瞬時停電後に自動で運転を再開 — 生産ラインを止めない',
+      steps:['瞬停不停機モード [bA-30] を設定：01=減速停止後再起動、02=直流電圧恒定制御','再起動待機時間 [bA-31] を設定：復電後何秒待ってから再起動するか（通常0.5~2秒）','瞬停不停機目標電圧 [bA-32] を設定：通常は入力電圧の√2倍（200Vクラスは約280Vに設定）','停電中の減速時間 [bA-34] を設定','テスト：短時間電源を遮断し、自動再起動することを確認'],
+      params:['bA-30','bA-31','bA-32','bA-34'],
+      warn:'自動再起動機能には安全上のリスクがあります。停電時にオペレーターが機械に近づく可能性がある場合は、この機能を慎重に使用し、適切な安全装置を設置してください。'}
+  },
+  'carrier':{
+    zh:{title:'載波頻率調整',subtitle:'減少馬達噪音或降低變頻器發熱',
+      steps:['了解載波頻率的影響：頻率越高 → 馬達噪音越小、線圈損耗越小，但變頻器發熱越大','設定載波頻率 [bA-11]：出廠預設通常為 2~4kHz，可調整範圍約 1~16kHz','馬達噪音大 → 提高載波頻率（如調至 8~12kHz）','變頻器溫度過高 → 降低載波頻率','注意：載波頻率越高，允許使用的連續電流越低（需降額）','查看說明書中的降額曲線，確認在目標載波頻率下的允許電流'],
+      params:['bA-11'],
+      note:'高載波頻率會增加對電纜的電磁干擾。若使用較長的馬達電纜（超過 20m），建議適當降低載波頻率或加裝輸出電抗器。'},
+    en:{title:'Carrier Frequency Adjustment',subtitle:'Reduce motor noise or lower inverter heat generation',
+      steps:['Understand carrier frequency effects: higher frequency → less motor noise, less winding loss, but more inverter heat','Set carrier frequency [bA-11]: factory default is typically 2~4kHz, adjustable range approximately 1~16kHz','Motor noise too loud → increase carrier frequency (e.g., to 8~12kHz)','Inverter temperature too high → decrease carrier frequency','Note: higher carrier frequency means lower allowable continuous current (derating required)','Check derating curve in manual to confirm allowable current at target carrier frequency'],
+      params:['bA-11'],
+      note:'High carrier frequency increases electromagnetic interference to cables. If using longer motor cables (over 20m), consider reducing carrier frequency or installing an output reactor.'},
+    ja:{title:'キャリア周波数の調整',subtitle:'モーター騒音を低減またはインバータの発熱を抑制',
+      steps:['キャリア周波数の影響を理解：高周波数 → モーター騒音が少ない、コイル損失が少ない、ただしインバータの発熱が増大','キャリア周波数 [bA-11] を設定：工場出荷設定は通常2~4kHz、調整範囲は約1~16kHz','モーター騒音が大きい → キャリア周波数を上げる（例：8~12kHzに）','インバータ温度が高すぎる → キャリア周波数を下げる','注意：キャリア周波数が高いほど、許容連続電流が低くなる（ディレーティングが必要）','目標キャリア周波数での許容電流を確認するため、説明書のディレーティング曲線を確認'],
+      params:['bA-11'],
+      note:'高キャリア周波数はケーブルへの電磁ノイズを増加させます。長いモーターケーブル（20m超）を使用する場合は、キャリア周波数を下げるか、出力リアクトルの設置を検討してください。'}
+  },
+  'backup':{
+    zh:{title:'參數備份與還原',subtitle:'換機前必做，避免所有設定遺失',
+      steps:['備份方法一（操作面板）：進入選單 → 讀寫功能 → 選擇「寫入至面板」，將所有參數儲存至操作面板內建記憶體','備份方法二（ProDriveNext 軟體）：透過 USB 連接電腦，使用 ProDriveNext 軟體匯出參數檔案','還原方法（操作面板）：進入選單 → 讀寫功能 → 選擇「從面板讀取」，將備份的參數還原至變頻器','還原時注意：確認新舊機型號相同，不同容量的機器可能部分參數需要重新調整'],
+      params:['UA-30','UA-31'],
+      note:'建議每次重要參數調整後都執行備份。操作面板內建記憶體只能儲存一組參數，若需儲存多組建議使用 ProDriveNext 軟體。'},
+    en:{title:'Parameter Backup & Restore',subtitle:'Must do before replacing unit — avoid losing all settings',
+      steps:['Backup Method 1 (Operation Panel): Go to Menu → Read/Write Function → Select "Write to Panel" to save all parameters to the operation panel built-in memory','Backup Method 2 (ProDriveNext Software): Connect to computer via USB, use ProDriveNext software to export parameter file','Restore Method (Operation Panel): Go to Menu → Read/Write Function → Select "Read from Panel" to restore backed-up parameters to inverter','Note when restoring: confirm new and old unit model numbers are the same; different capacity units may require some parameter re-adjustment'],
+      params:['UA-30','UA-31'],
+      note:'It is recommended to perform a backup after each important parameter adjustment. The operation panel built-in memory can only store one set of parameters; use ProDriveNext software if multiple sets need to be stored.'},
+    ja:{title:'パラメータバックアップ・復元',subtitle:'ユニット交換前に必ず実施 — 全設定の消失を防止',
+      steps:['バックアップ方法1（操作パネル）：メニュー → 読み書き機能 → 「パネルへ書き込み」を選択して全パラメータを操作パネル内蔵メモリに保存','バックアップ方法2（ProDriveNextソフトウェア）：USBでパソコンに接続し、ProDriveNextソフトウェアでパラメータファイルをエクスポート','復元方法（操作パネル）：メニュー → 読み書き機能 → 「パネルから読み込み」を選択してバックアップパラメータをインバータに復元','復元時の注意：新旧機種の型番が同じであることを確認；容量が異なる機種は一部パラメータの再調整が必要な場合がある'],
+      params:['UA-30','UA-31'],
+      note:'重要なパラメータ調整後は毎回バックアップを実行することをお勧めします。操作パネル内蔵メモリは1組のパラメータしか保存できないため、複数組の保存が必要な場合はProDriveNextソフトウェアを使用してください。'}
+  },
+  'factory-reset':{
+    zh:{title:'恢復出廠設定',subtitle:'所有參數回到出廠預設值，從頭開始設定',
+      steps:['確認所有重要參數已備份（此操作無法復原）','進入參數設定，找到初始化功能','設定 [Ub-02]=01：執行全參數初始化（恢復所有參數至出廠值）','執行後變頻器會自動重啟','重啟後確認參數已回到預設值（可查看 [AA111]=00 等基本參數）','重新設定馬達參數和必要的功能參數'],
+      params:['Ub-02'],
+      warn:'恢復出廠設定會清除所有客戶設定，包含馬達參數、保護設定、端子設定等。請確認已備份所有重要設定後再執行。'},
+    en:{title:'Factory Reset',subtitle:'Reset all parameters to factory default values and start over',
+      steps:['Confirm all important parameters have been backed up (this operation cannot be undone)','Enter parameter settings and find the initialization function','Set [Ub-02]=01: execute full parameter initialization (restore all parameters to factory defaults)','Inverter will automatically restart after execution','After restart, confirm parameters have returned to default values (check basic parameters like [AA111]=00)','Re-enter motor parameters and necessary function parameters'],
+      params:['Ub-02'],
+      warn:'Factory reset will clear all customer settings, including motor parameters, protection settings, and terminal settings. Confirm all important settings have been backed up before proceeding.'},
+    ja:{title:'工場出荷設定に戻す',subtitle:'全パラメータを工場出荷設定値にリセットして最初からやり直す',
+      steps:['全ての重要なパラメータがバックアップ済みであることを確認（この操作は元に戻せない）','パラメータ設定に入り、初期化機能を見つける','[Ub-02]=01 に設定：全パラメータ初期化を実行（全パラメータを工場出荷値に戻す）','実行後インバータは自動的に再起動','再起動後、パラメータがデフォルト値に戻っていることを確認（[AA111]=00 などの基本パラメータを確認）','モーターパラメータと必要な機能パラメータを再設定'],
+      params:['Ub-02'],
+      warn:'工場出荷設定に戻すと、モーターパラメータ、保護設定、端子設定を含む全ての設定が消去されます。実行前に全ての重要な設定がバックアップされていることを確認してください。'}
+  },
+  'run-time':{
+    zh:{title:'查詢累積運轉時間',subtitle:'了解設備使用狀況，判斷保養時機',
+      steps:['進入監控畫面（按 F1 進入選單 → 選擇監控模式）','查看累積運轉時間：監控參數 [dC-01] 或在面板資訊畫面中查看','查看通電時間：[dC-02]（從出廠到現在的通電累計時間）','查看風扇累積運轉時間（部分機型）：[dC-08]','判斷保養時機：電容建議 5~7 年更換，冷卻風扇建議 2~3 年更換'],
+      params:['dC-01','dC-02'],
+      note:'累積運轉時間是判斷設備是否需要保養的重要依據。若累積時間超過 20,000 小時（約 2~3 年連續運轉），建議進行全面保養檢查。'},
+    en:{title:'Check Accumulated Run Time',subtitle:'Understand equipment usage status and determine maintenance timing',
+      steps:['Enter monitoring screen (press F1 to access menu → select monitoring mode)','Check accumulated run time: monitoring parameter [dC-01] or view in panel information screen','Check power-on time: [dC-02] (cumulative power-on time from factory to present)','Check fan accumulated run time (some models): [dC-08]','Determine maintenance timing: capacitors recommended replacement every 5~7 years, cooling fan every 2~3 years'],
+      params:['dC-01','dC-02'],
+      note:'Accumulated run time is an important basis for determining whether equipment needs maintenance. If accumulated time exceeds 20,000 hours (approximately 2~3 years of continuous operation), a comprehensive maintenance inspection is recommended.'},
+    ja:{title:'累積運転時間の確認',subtitle:'設備の使用状況を把握し、保守のタイミングを判断',
+      steps:['監視画面に入る（F1を押してメニューに入る → 監視モードを選択）','累積運転時間を確認：監視パラメータ [dC-01] またはパネル情報画面で確認','通電時間を確認：[dC-02]（工場出荷から現在までの累積通電時間）','ファン累積運転時間を確認（一部機種）：[dC-08]','保守のタイミングを判断：コンデンサは5~7年、冷却ファンは2~3年での交換を推奨'],
+      params:['dC-01','dC-02'],
+      note:'累積運転時間は、設備の保守が必要かどうかを判断する重要な根拠です。累積時間が20,000時間（約2~3年の連続運転）を超えた場合は、総合的な保守点検を推奨します。'}
+  },
+  'fan-check':{
+    zh:{title:'冷卻風扇確認與維護',subtitle:'E020 最常見原因，定期清潔可大幅延長壽命',
+      steps:['定期（每月）清潔散熱鰭片：關閉電源後，使用壓縮空氣從上往下吹除積塵','確認進氣口和排氣口是否有異物堵塞','聆聽風扇聲音：若有異常雜音或轉速明顯變慢，表示軸承即將損壞','監控風扇狀態：部分機型可查看 [dC-08] 風扇累積運轉時間','查詢風扇轉速偵測：若發生 E020，表示風扇轉速低於正常值','更換週期建議：2~3 年更換一次（即使外觀正常，軸承也可能老化）'],
+      params:['dC-08'],
+      note:'冷卻風扇屬於消耗品，建議準備備品。更換時請使用日立原廠零件或同規格品，確認電壓、電流和尺寸與原廠相同。'},
+    en:{title:'Cooling Fan Check & Maintenance',subtitle:'Most common cause of E020 — regular cleaning extends life significantly',
+      steps:['Regular (monthly) heat sink cleaning: after powering off, use compressed air to blow dust from top to bottom','Check if air intake and exhaust ports are blocked by foreign objects','Listen to fan sound: unusual noise or noticeably slower speed indicates bearing is about to fail','Monitor fan status: some models can check [dC-08] fan accumulated run time','Check fan speed detection: E020 indicates fan speed is below normal value','Recommended replacement cycle: every 2~3 years (even if appearance is normal, bearings may be aging)'],
+      params:['dC-08'],
+      note:'Cooling fan is a consumable part — it is recommended to keep spare parts. When replacing, use Hitachi original parts or equivalent specifications, confirming voltage, current, and dimensions match the original.'},
+    ja:{title:'冷却ファンの確認・保守',subtitle:'E020の最も一般的な原因 — 定期清掃で寿命を大幅に延長',
+      steps:['定期的（毎月）なヒートシンク清掃：電源遮断後、圧縮空気で上から下へホコリを吹き飛ばす','吸気口と排気口が異物で塞がれていないか確認','ファンの音を聞く：異音や明らかな回転数低下は軸受の損傷が近いサイン','ファン状態を監視：一部機種で [dC-08] ファン累積運転時間を確認可能','ファン回転数検出を確認：E020はファン回転数が正常値を下回っていることを示す','交換周期の推奨：2~3年ごとに交換（外観が正常でも軸受が老化している可能性がある）'],
+      params:['dC-08'],
+      note:'冷却ファンは消耗品です。スペアパーツの準備をお勧めします。交換時は日立純正品または同等規格品を使用し、電圧、電流、寸法が純正品と一致することを確認してください。'}
+  },
+  'rs485':{
+    zh:{title:'RS485 通訊設定（Modbus RTU）',subtitle:'讓變頻器接受 PLC 或上位機的通訊控制',
+      steps:['接線：使用遮蔽雙絞線，接至變頻器控制端子的 RDA（+）和 RDB（-）端子','設定通訊站號 [CF-01]：每台變頻器需要唯一的站號（1~247）','設定通訊速率 [CF-02]：需與上位機設定相同（如 9600、19200、38400 bps）','設定通訊格式 [CF-03]：數據位、奇偶校驗、停止位，需與上位機一致','設定運轉指令來源 [AA111]=03（RS485 通訊控制）','設定頻率指令來源 [AA101]=03（RS485 通訊控制）','測試：從上位機發送通訊指令，確認變頻器正確回應'],
+      params:['CF-01','CF-02','CF-03','AA111','AA101'],
+      note:'使用 RS485 通訊時，匯流排兩端需加裝終端電阻（120Ω）。若通訊不穩定，先確認接線是否使用遮蔽線，並將遮蔽層單點接地。'},
+    en:{title:'RS485 Communication Setup (Modbus RTU)',subtitle:'Allow inverter to accept PLC or host system communication control',
+      steps:['Wiring: use shielded twisted pair wire, connect to inverter control terminal RDA (+) and RDB (-) terminals','Set communication station number [CF-01]: each inverter needs a unique station number (1~247)','Set communication baud rate [CF-02]: must match host system setting (e.g., 9600, 19200, 38400 bps)','Set communication format [CF-03]: data bits, parity, stop bits must match host system','Set run command source [AA111]=03 (RS485 communication control)','Set frequency command source [AA101]=03 (RS485 communication control)','Test: send communication command from host system and confirm inverter responds correctly'],
+      params:['CF-01','CF-02','CF-03','AA111','AA101'],
+      note:'When using RS485 communication, termination resistors (120Ω) must be installed at both ends of the bus. If communication is unstable, first verify shielded cable is used and shield is grounded at a single point.'},
+    ja:{title:'RS485通信設定（Modbus RTU）',subtitle:'インバータがPLCまたは上位機からの通信制御を受け付けられるようにする',
+      steps:['配線：シールド付きツイストペア線を使用し、インバータ制御端子のRDA（+）とRDB（-）端子に接続','通信局番 [CF-01] を設定：各インバータに固有の局番が必要（1~247）','通信速度 [CF-02] を設定：上位機の設定と一致させる（例：9600、19200、38400 bps）','通信フォーマット [CF-03] を設定：データビット、パリティ、ストップビットは上位機と一致させる','運転指令元 [AA111]=03（RS485通信制御）に設定','周波数指令元 [AA101]=03（RS485通信制御）に設定','テスト：上位機から通信指令を送信し、インバータが正しく応答することを確認'],
+      params:['CF-01','CF-02','CF-03','AA111','AA101'],
+      note:'RS485通信を使用する場合、バスの両端に終端抵抗（120Ω）を設置する必要があります。通信が不安定な場合は、シールドケーブルを使用していること、シールドが1点接地されていることを最初に確認してください。'}
+  },
+  'pid':{
+    zh:{title:'PID 控制設定',subtitle:'用於水泵壓力恆定控制、恆溫控制等閉迴路應用',
+      steps:['設定頻率指令來源 [AA101]=15（PID 輸出）','設定 PID 回授來源 [AH-02]：選擇回授信號輸入端子（通常為 Ai1 或 Ai2）','設定 PID 目標值來源 [AH-01]：01=固定目標值、02=類比輸入目標值','設定 PID 目標值 [AH-10]：若使用固定目標值，輸入目標值百分比（0~100%）','調整 PID 增益：P 增益 [AH-61]（比例）、I 增益 [AH-62]（積分）','測試：啟動後觀察回授值是否穩定在目標值附近，若不穩定調整 P 和 I 增益'],
+      params:['AA101','AH-01','AH-02','AH-10','AH-61','AH-62'],
+      note:'PID 調整原則：先增大 P 增益至系統接近目標值，再增大 I 增益消除穩態誤差。若出現震盪，降低 P 增益。'},
+    en:{title:'PID Control Setup',subtitle:'For constant pressure pump control, temperature control, and other closed-loop applications',
+      steps:['Set frequency command source [AA101]=15 (PID output)','Set PID feedback source [AH-02]: select feedback signal input terminal (typically Ai1 or Ai2)','Set PID target value source [AH-01]: 01=fixed target value, 02=analog input target value','Set PID target value [AH-10]: if using fixed target value, enter target value percentage (0~100%)','Adjust PID gains: P gain [AH-61] (proportional), I gain [AH-62] (integral)','Test: after starting, observe if feedback value stabilizes near target value; if unstable, adjust P and I gains'],
+      params:['AA101','AH-01','AH-02','AH-10','AH-61','AH-62'],
+      note:'PID tuning principle: first increase P gain until system approaches target value, then increase I gain to eliminate steady-state error. If oscillation occurs, decrease P gain.'},
+    ja:{title:'PID制御の設定',subtitle:'ポンプ圧力一定制御、温度制御などのクローズドループ用途向け',
+      steps:['周波数指令元 [AA101]=15（PID出力）に設定','PIDフィードバック元 [AH-02] を設定：フィードバック信号入力端子を選択（通常Ai1またはAi2）','PID目標値元 [AH-01] を設定：01=固定目標値、02=アナログ入力目標値','PID目標値 [AH-10] を設定：固定目標値を使用する場合、目標値のパーセンテージを入力（0~100%）','PIDゲインを調整：Pゲイン [AH-61]（比例）、Iゲイン [AH-62]（積分）','テスト：起動後、フィードバック値が目標値付近で安定するか観察；不安定な場合はPとIゲインを調整'],
+      params:['AA101','AH-01','AH-02','AH-10','AH-61','AH-62'],
+      note:'PID調整の原則：まずPゲインを上げてシステムが目標値に近づくようにし、次にIゲインを上げて定常偏差を除去します。振動が発生した場合はPゲインを下げます。'}
+  },
+  'password':{
+    zh:{title:'參數密碼保護',subtitle:'防止未授權人員修改重要參數',
+      steps:['設定密碼 [UA-01]：輸入一個 1~9999 的數值作為密碼','設定顯示限制 [UA-10]：02=使用者模式（只顯示 [UA-31]~[UA-62] 設定的參數）','設定使用者可見參數 [UA-31]~[UA-62]：輸入允許一般操作員查看的參數代號','解除密碼保護：在 [UA-01] 輸入正確密碼後設為 0','注意：若忘記密碼，需與日立服務中心聯繫'],
+      params:['UA-01','UA-10','UA-31'],
+      warn:'請將密碼記錄在安全的地方。忘記密碼後，一般使用者無法解除保護，需要送回服務中心處理。'},
+    en:{title:'Parameter Password Protection',subtitle:'Prevent unauthorized personnel from modifying important parameters',
+      steps:['Set password [UA-01]: enter a number from 1~9999 as the password','Set display restriction [UA-10]: 02=user mode (only display parameters set in [UA-31]~[UA-62])','Set user-visible parameters [UA-31]~[UA-62]: enter parameter codes that general operators are allowed to view','Disable password protection: set [UA-01] to 0 after entering correct password','Note: if password is forgotten, contact Hitachi service center'],
+      params:['UA-01','UA-10','UA-31'],
+      warn:'Please record the password in a safe place. If the password is forgotten, regular users cannot disable the protection — the unit must be sent to a service center.'},
+    ja:{title:'パラメータパスワード保護',subtitle:'権限のない人員による重要なパラメータの変更を防止',
+      steps:['パスワード [UA-01] を設定：1~9999の数値をパスワードとして入力','表示制限 [UA-10] を設定：02=ユーザーモード（[UA-31]～[UA-62]で設定されたパラメータのみ表示）','ユーザーが表示できるパラメータ [UA-31]～[UA-62] を設定：一般オペレーターが閲覧できるパラメータコードを入力','パスワード保護を解除：正しいパスワードを入力後、[UA-01] を0に設定','注意：パスワードを忘れた場合は日立サービスセンターに連絡が必要'],
+      params:['UA-01','UA-10','UA-31'],
+      warn:'パスワードは安全な場所に記録しておいてください。パスワードを忘れた場合、一般ユーザーは保護を解除できず、サービスセンターへの持ち込みが必要になります。'}
+  },
+  'monitor':{
+    zh:{title:'監控輸出狀態',subtitle:'日常巡檢時確認變頻器運轉狀態',
+      steps:['進入監控畫面（電源投入後的主畫面，或按 F1 進入選單 → 監控模式）','確認輸出頻率 [dA-01]：目前的輸出頻率（Hz）','確認輸出電流 [dA-02]：目前的輸出電流（A），確認是否在正常範圍內','確認輸出電壓 [dA-03]：目前的輸出電壓（V）','確認直流電壓 [dA-04]：P-N 間直流母線電壓','確認散熱片溫度 [dA-09]：確認是否有過熱趨勢','查看最近的跳脫記錄 [dA-20]~[dA-22]：了解是否有異常歷史'],
+      params:['dA-01','dA-02','dA-03','dA-09','dA-20'],
+      note:'建議每天巡檢時記錄輸出電流，若電流逐漸上升（在相同負載下），可能表示機械摩擦增加或馬達效率下降，需要進一步檢查。'},
+    en:{title:'Monitor Output Status',subtitle:'Check inverter operating status during daily inspection',
+      steps:['Enter monitoring screen (main screen after power on, or press F1 to access menu → monitoring mode)','Check output frequency [dA-01]: current output frequency (Hz)','Check output current [dA-02]: current output current (A), verify it is within normal range','Check output voltage [dA-03]: current output voltage (V)','Check DC voltage [dA-04]: P-N DC bus voltage','Check heat sink temperature [dA-09]: check for overheating trend','View recent trip records [dA-20]~[dA-22]: check for abnormal history'],
+      params:['dA-01','dA-02','dA-03','dA-09','dA-20'],
+      note:'It is recommended to record the output current during daily inspections. If current gradually increases (under the same load), it may indicate increased mechanical friction or decreased motor efficiency, requiring further investigation.'},
+    ja:{title:'出力状態のモニタリング',subtitle:'日常点検でインバータの運転状態を確認',
+      steps:['監視画面に入る（電源投入後のメイン画面、またはF1を押してメニューに入る → 監視モード）','出力周波数 [dA-01] を確認：現在の出力周波数（Hz）','出力電流 [dA-02] を確認：現在の出力電流（A）、正常範囲内かどうかを確認','出力電圧 [dA-03] を確認：現在の出力電圧（V）','直流電圧 [dA-04] を確認：P-N間直流母線電圧','ヒートシンク温度 [dA-09] を確認：過熱傾向がないか確認','最近のトリップ記録 [dA-20]～[dA-22] を確認：異常履歴がないか確認'],
+      params:['dA-01','dA-02','dA-03','dA-09','dA-20'],
+      note:'日常点検時に出力電流を記録することをお勧めします。電流が徐々に増加している場合（同じ負荷条件下）、機械的摩擦の増加やモーター効率の低下を示している可能性があり、さらなる調査が必要です。'}
+  },
+};
+
+// ── Render nav grid ───────────────────────────────────────────────────────────
+function renderNavGrid(){
+  const ng=document.getElementById('navGrid');
+  const fr=document.getElementById('funcResult');
+  if(!ng)return;
+  ng.style.display='grid';
+  fr.style.display='none';
+  const data=NAV_DATA[lang]||NAV_DATA.zh;
+  ng.innerHTML=data.sections.map(sec=>{
+    const items=sec.items.map(item=>`
+      <div class="nav-card" onclick="showFunc('${item.id}')">
+        <div class="nav-icon">${item.icon}</div>
+        <div class="nav-title">${item.title}</div>
+        <div class="nav-desc">${item.desc}</div>
+      </div>`).join('');
+    return `<div class="nav-section">${sec.label}</div>${items}`;
+  }).join('');
+}
+
+function showFunc(id){
+  const ng=document.getElementById('navGrid');
+  const fr=document.getElementById('funcResult');
+  const detail=FUNC_DETAIL[id];
+  if(!detail){return;}
+  const d=detail[lang]||detail.zh;
+  const backLabel={zh:'← 返回功能清單',en:'← Back to Functions',ja:'← 機能一覧に戻る'};
+  const causeLabel={zh:'設定步驟',en:'Setup Steps',ja:'設定手順'};
+  const paramLabel={zh:'相關參數',en:'Related Parameters',ja:'関連パラメータ'};
+  const steps=d.steps.map((s,i)=>`<li class="func-step"><span class="func-step-num">${i+1}</span><span>${s}</span></li>`).join('');
+  const params=d.params.map(p=>`<span class="func-param">${p}</span>`).join('');
+  const note=d.note?`<div class="func-note">💡 ${d.note}</div>`:'';
+  const warn=d.warn?`<div class="func-warn">⚠️ ${d.warn}</div>`:'';
+  ng.style.display='none';
+  fr.style.display='block';
+  fr.innerHTML=`
+    <button class="back-btn" onclick="renderNavGrid()">← ${backLabel[lang]||backLabel.zh}</button>
+    <div class="func-card">
+      <div class="func-header">
+        <div class="func-title">${d.title}</div>
+      </div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:12px">${d.subtitle}</div>
+      <div class="func-section">${causeLabel[lang]||causeLabel.zh}</div>
+      <ul class="func-steps">${steps}</ul>
+      <div class="func-section" style="margin-top:16px">${paramLabel[lang]||paramLabel.zh}</div>
+      <div class="func-params">${params}</div>
+      ${note}${warn}
+    </div>`;
+}
+
+// Update tab labels on lang change
+const origSetLang = setLang;
+
 // Run after DOM is ready
-document.addEventListener('DOMContentLoaded',function(){setLang('zh');});
+document.addEventListener('DOMContentLoaded',function(){
+  setLang('zh');
+  // Update tab labels
+  function updateTabLabels(){
+    const labels={zh:['⚡ 功能導航','🔧 故障診斷'],en:['⚡ Functions','🔧 Fault Diagnosis'],ja:['⚡ 機能ナビ','🔧 故障診断']};
+    const l=labels[lang]||labels.zh;
+    const tn=document.getElementById('tabNav');
+    const td=document.getElementById('tabDiag');
+    if(tn)tn.textContent=l[0];
+    if(td)td.textContent=l[1];
+  }
+  const _sl=setLang;
+  setLang=function(l){_sl(l);updateTabLabels();if(document.getElementById('panelNav').classList.contains('on'))renderNavGrid();};
+  updateTabLabels();
+});
 </script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-<!-- SJ-P1 v5.1 手機版修正 2026-04-20 -->
+<!-- SJ-P1 v5.2 切換語言清空結果 2026-04-20 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -581,15 +581,14 @@ function setLang(l){
   set('hdrTitle',t.hdrTitle);set('hdrSub',t.hdrSub);set('hdrBadge',t.hdrBadge);
   set('langLabel',t.langLabel);
   const sb=document.getElementById('sbSearch');if(sb)sb.placeholder=t.searchPH;
-  // Update welcome card with new lang (rebuilds if needed)
-  rebuildWelcome(t);
-  set('welcomeTitle',t.welcomeTitle);setH('welcomeDesc',t.welcomeDesc);
   set('modeLabel',t.modeLabel);
   const ai=document.getElementById('modeAI');if(ai)ai.textContent=t.modeAI;
   const db2=document.getElementById('modeDB');if(db2)db2.textContent=t.modeDB;
   const inp=document.getElementById('inp');if(inp)inp.placeholder=t.inputPH;
-  const qc=document.getElementById('quickChips');
-  if(qc)qc.innerHTML=t.chips.map(([q,label])=>`<button class="chip" onclick="ask('${q}')">${label}</button>`).join('');
+  // Clear result and show welcome in new language
+  document.getElementById('resultArea').innerHTML='';
+  document.querySelectorAll('.sb-item,.mobile-sb-item').forEach(e=>e.classList.remove('active'));
+  rebuildWelcome(t);
   renderSidebar();
   renderMobileSidebar();
 }

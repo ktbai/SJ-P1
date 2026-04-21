@@ -1,4 +1,4 @@
-<!-- SJ-P1 v5.0 三語言+響應式手機版 2026-04-20 -->
+<!-- SJ-P1 v5.1 手機版修正 2026-04-20 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -122,10 +122,10 @@ textarea.inp::placeholder{color:var(--muted)}
   .lang-bar{padding:5px 10px;gap:5px;flex-wrap:wrap}
   .lang-btn{font-size:11px;padding:4px 8px}
   /* Layout - full width on mobile */
-  .layout{flex-direction:column}
-  .main{width:100%;min-width:0}
-  /* Chat area */
-  .chat{padding:12px}
+  .layout{flex-direction:column;height:calc(100vh - 100px);overflow:hidden}
+  .main{width:100%;min-width:0;flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
+  /* Chat area - must have flex:1 to fill space */
+  .chat{flex:1;overflow-y:auto;padding:12px;min-height:0}
   /* Welcome card */
   .welcome{padding:16px}
   .wt{font-size:14px}
@@ -189,8 +189,6 @@ textarea.inp::placeholder{color:var(--muted)}
     <div id="welcomeArea"></div>
     <div id="resultArea"></div>
   </div>
-  </div>
-
   <div class="input-wrap">
     <div class="mode-row">
       <span class="mode-label" id="modeLabel">回答模式：</span>

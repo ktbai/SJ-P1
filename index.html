@@ -1,4 +1,4 @@
-<!-- SJ-P1 v5.2 切換語言清空結果 2026-04-20 -->
+<!-- SJ-P1 v5.3 強制清空 2026-04-20 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -171,9 +171,9 @@ textarea.inp::placeholder{color:var(--muted)}
 
 <div class="lang-bar">
   <span class="lang-label" id="langLabel">語言：</span>
-  <button class="lang-btn on" id="btnZH" onclick="setLang('zh')">🇹🇼 繁體中文</button>
-  <button class="lang-btn" id="btnEN" onclick="setLang('en')">🇺🇸 English</button>
-  <button class="lang-btn" id="btnJA" onclick="setLang('ja')">🇯🇵 日本語</button>
+  <button class="lang-btn on" id="btnZH" onclick="document.getElementById('resultArea').innerHTML='';setLang('zh')">🇹🇼 繁體中文</button>
+  <button class="lang-btn" id="btnEN" onclick="document.getElementById('resultArea').innerHTML='';setLang('en')">🇺🇸 English</button>
+  <button class="lang-btn" id="btnJA" onclick="document.getElementById('resultArea').innerHTML='';setLang('ja')">🇯🇵 日本語</button>
 </div>
 <div class="mobile-sb" id="mobileSb"></div>
 <div class="layout">
